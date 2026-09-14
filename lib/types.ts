@@ -10,7 +10,8 @@ export interface FamilyMember {
   displayName: string;
   email: string;
   familyId: string;
-  fcmToken?: string;
+  fcmToken?: string; // latest token (backwards compatibility)
+  fcmTokens?: string[]; // all active device tokens
   role: "admin" | "member";
   createdAt: Date;
 }

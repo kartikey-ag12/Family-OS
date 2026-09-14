@@ -17,6 +17,8 @@ import {
   Timestamp,
   orderBy,
   deleteDoc,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type {
@@ -118,12 +120,19 @@ export async function getUserProfile(uid: string): Promise<FamilyMember | null> 
   const snap = await getDoc(doc(db, "users", uid));
   if (!snap.exists()) return null;
   const d = snap.data();
+  const fcmTokens: string[] = Array.isArray(d.fcmTokens)
+    ? d.fcmTokens
+    : d.fcmToken
+    ? [d.fcmToken]
+    : [];
+
   return {
     uid: snap.id,
     displayName: d.displayName,
     email: d.email,
     familyId: d.familyId,
-    fcmToken: d.fcmToken,
+    fcmToken: d.fcmToken ?? (fcmTokens.length > 0 ? fcmTokens[fcmTokens.length - 1] : undefined),
+    fcmTokens,
     role: d.role ?? "member",
     createdAt: fromTimestamp(d.createdAt) ?? new Date(),
   };
@@ -145,19 +154,45 @@ export async function getFamilyMembers(
     where("familyId", "==", familyId)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({
-    uid: d.id,
-    displayName: d.data().displayName,
-    email: d.data().email,
-    familyId: d.data().familyId,
-    fcmToken: d.data().fcmToken,
-    role: d.data().role ?? "member",
-    createdAt: fromTimestamp(d.data().createdAt) ?? new Date(),
-  }));
+  return snap.docs.map((d) => {
+    const data = d.data();
+    const fcmTokens: string[] = Array.isArray(data.fcmTokens)
+      ? data.fcmTokens
+      : data.fcmToken
+      ? [data.fcmToken]
+      : [];
+
+    return {
+      uid: d.id,
+      displayName: data.displayName,
+      email: data.email,
+      familyId: data.familyId,
+      fcmToken: data.fcmToken ?? (fcmTokens.length > 0 ? fcmTokens[fcmTokens.length - 1] : undefined),
+      fcmTokens,
+      role: data.role ?? "member",
+      createdAt: fromTimestamp(data.createdAt) ?? new Date(),
+    };
+  });
 }
 
 export async function saveFcmToken(uid: string, token: string): Promise<void> {
-  await updateDoc(doc(db, "users", uid), { fcmToken: token });
+  const ref = doc(db, "users", uid);
+  await setDoc(
+    ref,
+    {
+      fcmTokens: arrayUnion(token),
+      fcmToken: token,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+export async function removeFcmToken(uid: string, token: string): Promise<void> {
+  const ref = doc(db, "users", uid);
+  await updateDoc(ref, {
+    fcmTokens: arrayRemove(token),
+  });
 }
 
 // ─── Medicines ────────────────────────────────────────────────

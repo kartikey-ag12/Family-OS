@@ -102,17 +102,27 @@ async function processReminders(req: NextRequest) {
       });
     }
 
-    // Cache user FCM tokens to avoid redundant Firestore reads
-    const userTokenCache = new Map<string, string | null>();
-    async function getUserToken(uid: string): Promise<string | null> {
-      if (userTokenCache.has(uid)) return userTokenCache.get(uid)!;
+    // Cache user FCM tokens (array per user) to avoid redundant Firestore reads
+    const userTokensCache = new Map<string, string[]>();
+    async function getUserTokens(uid: string): Promise<string[]> {
+      if (userTokensCache.has(uid)) return userTokensCache.get(uid)!;
       try {
         const userDoc = await adminDB!.collection("users").doc(uid).get();
-        const token = (userDoc.data()?.fcmToken as string) || null;
-        userTokenCache.set(uid, token);
-        return token;
+        if (!userDoc.exists) return [];
+        const uData = userDoc.data();
+        const set = new Set<string>();
+        if (Array.isArray(uData?.fcmTokens)) {
+          uData.fcmTokens.forEach((t: string) => {
+            if (t) set.add(t);
+          });
+        }
+        if (uData?.fcmToken) set.add(uData.fcmToken);
+
+        const list = Array.from(set);
+        userTokensCache.set(uid, list);
+        return list;
       } catch {
-        return null;
+        return [];
       }
     }
 
@@ -176,58 +186,86 @@ async function processReminders(req: NextRequest) {
       if (med.time === currentTime) {
         if (statusData.status === "pending" && !statusData.notificationSent) {
           const assignedUid = med.assignedToUid || med.createdBy;
-          const token = assignedUid ? await getUserToken(assignedUid) : null;
+          const tokens = assignedUid ? await getUserTokens(assignedUid) : [];
 
-          if (token) {
+          if (tokens.length > 0) {
             const foodLabel = med.takenAfterFood ? "Khane ke baad" : "Khane se pehle";
-            try {
-              await adminMessaging.send({
-                token,
+            const messages = tokens.map((token) => ({
+              token,
+              notification: {
+                title: `💊 Dawai yaad hai! — ${med.assignedTo}`,
+                body: `${med.name} leni hai (${foodLabel}) — ${med.time}`,
+              },
+              webpush: {
                 notification: {
                   title: `💊 Dawai yaad hai! — ${med.assignedTo}`,
                   body: `${med.name} leni hai (${foodLabel}) — ${med.time}`,
+                  icon: "/icons/icon-192.png",
+                  badge: "/icons/icon-192.png",
+                  requireInteraction: true,
+                  actions: [
+                    { action: "taken", title: "✅ Le li" },
+                    { action: "dismiss", title: "Baad mein" },
+                  ],
                 },
-                webpush: {
-                  notification: {
-                    title: `💊 Dawai yaad hai! — ${med.assignedTo}`,
-                    body: `${med.name} leni hai (${foodLabel}) — ${med.time}`,
-                    icon: "/icons/icon-192.png",
-                    badge: "/icons/icon-192.png",
-                    requireInteraction: true,
-                    actions: [
-                      { action: "taken", title: "✅ Le li" },
-                      { action: "dismiss", title: "Baad mein" },
-                    ],
-                  },
-                  fcmOptions: { link: "/home" },
-                },
-                data: {
-                  title: `💊 Dawai yaad hai! — ${med.assignedTo}`,
-                  body: `${med.name} leni hai (${foodLabel}) — ${med.time}`,
-                  medicineName: String(med.name),
-                  time: String(med.time),
-                  assignedTo: String(med.assignedTo),
-                  url: "/home",
-                },
+                fcmOptions: { link: "/home" },
+              },
+              data: {
+                title: `💊 Dawai yaad hai! — ${med.assignedTo}`,
+                body: `${med.name} leni hai (${foodLabel}) — ${med.time}`,
+                medicineName: String(med.name),
+                time: String(med.time),
+                assignedTo: String(med.assignedTo),
+                url: "/home",
+              },
+            }));
+
+            try {
+              const batchResponse = await adminMessaging.sendEach(messages);
+
+              // Check for dead tokens and clean up
+              const deadTokens: string[] = [];
+              batchResponse.responses.forEach((resp, idx) => {
+                if (!resp.success && resp.error) {
+                  const errCode = resp.error.code;
+                  if (
+                    errCode === "messaging/registration-token-not-registered" ||
+                    errCode === "messaging/invalid-registration-token"
+                  ) {
+                    deadTokens.push(tokens[idx]);
+                  }
+                }
               });
 
-              await statusRef.set(
-                {
-                  notificationSent: true,
-                  notifiedAt: FieldValue.serverTimestamp(),
-                },
-                { merge: true }
-              );
+              if (deadTokens.length > 0 && assignedUid) {
+                await adminDB
+                  .collection("users")
+                  .doc(assignedUid)
+                  .update({
+                    fcmTokens: FieldValue.arrayRemove(...deadTokens),
+                  })
+                  .catch(console.warn);
+              }
 
-              remindersSent++;
-              console.log(`[Cron API] ✅ Sent reminder for "${med.name}" to ${med.assignedTo}`);
+              if (batchResponse.successCount > 0) {
+                await statusRef.set(
+                  {
+                    notificationSent: true,
+                    notifiedAt: FieldValue.serverTimestamp(),
+                  },
+                  { merge: true }
+                );
+
+                remindersSent += batchResponse.successCount;
+                console.log(`[Cron API] ✅ Sent reminder for "${med.name}" to ${batchResponse.successCount} device(s) of ${med.assignedTo}`);
+              }
             } catch (sendErr: unknown) {
               const msg = sendErr instanceof Error ? sendErr.message : "FCM send error";
               console.error(`[Cron API] ❌ Failed to send reminder for "${med.name}":`, msg);
               errors.push(`Reminder error for ${med.name}: ${msg}`);
             }
           } else {
-            console.log(`[Cron API] ⚠️ No FCM token found for ${med.assignedTo} (${assignedUid})`);
+            console.log(`[Cron API] ⚠️ No FCM tokens found for ${med.assignedTo} (${assignedUid})`);
           }
         }
       }
@@ -235,18 +273,28 @@ async function processReminders(req: NextRequest) {
       // ─── 5. Check 30-Minute Follow-up Reminder ────────────────
       if (med.time === time30MinsAgo) {
         if (statusData.status === "pending" && !statusData.followUpSent) {
-          // Medicine still not taken after 30 minutes -> Notify all family members
+          // Medicine still not taken after 30 minutes -> Notify all family members across all their devices
           try {
             const familyUsersSnap = await adminDB
               .collection("users")
               .where("familyId", "==", med.familyId)
               .get();
 
-            const familyTokens: string[] = [];
+            const tokenToUidMap = new Map<string, string>();
             familyUsersSnap.forEach((uDoc) => {
-              const fcm = uDoc.data().fcmToken as string | undefined;
-              if (fcm) familyTokens.push(fcm);
+              const uData = uDoc.data();
+              const uid = uDoc.id;
+              if (Array.isArray(uData.fcmTokens)) {
+                uData.fcmTokens.forEach((t: string) => {
+                  if (t) tokenToUidMap.set(t, uid);
+                });
+              }
+              if (uData.fcmToken) {
+                tokenToUidMap.set(uData.fcmToken, uid);
+              }
             });
+
+            const familyTokens = Array.from(tokenToUidMap.keys());
 
             if (familyTokens.length > 0) {
               const foodLabel = med.takenAfterFood ? "Khane ke baad" : "Khane se pehle";
@@ -275,17 +323,50 @@ async function processReminders(req: NextRequest) {
                 },
               }));
 
-              await adminMessaging.sendEach(messages);
-              await statusRef.set(
-                {
-                  followUpSent: true,
-                  followUpAt: FieldValue.serverTimestamp(),
-                },
-                { merge: true }
-              );
+              const batchResponse = await adminMessaging.sendEach(messages);
 
-              followUpsSent++;
-              console.log(`[Cron API] ⚠️ Sent follow-up for "${med.name}" to ${familyTokens.length} family member(s)`);
+              // Clean up dead tokens for respective family members
+              const userToDeadTokens = new Map<string, string[]>();
+              batchResponse.responses.forEach((resp, idx) => {
+                if (!resp.success && resp.error) {
+                  const errCode = resp.error.code;
+                  if (
+                    errCode === "messaging/registration-token-not-registered" ||
+                    errCode === "messaging/invalid-registration-token"
+                  ) {
+                    const deadToken = familyTokens[idx];
+                    const uid = tokenToUidMap.get(deadToken);
+                    if (uid) {
+                      const list = userToDeadTokens.get(uid) || [];
+                      list.push(deadToken);
+                      userToDeadTokens.set(uid, list);
+                    }
+                  }
+                }
+              });
+
+              for (const [uid, deadList] of userToDeadTokens.entries()) {
+                await adminDB
+                  .collection("users")
+                  .doc(uid)
+                  .update({
+                    fcmTokens: FieldValue.arrayRemove(...deadList),
+                  })
+                  .catch(console.warn);
+              }
+
+              if (batchResponse.successCount > 0) {
+                await statusRef.set(
+                  {
+                    followUpSent: true,
+                    followUpAt: FieldValue.serverTimestamp(),
+                  },
+                  { merge: true }
+                );
+
+                followUpsSent += batchResponse.successCount;
+                console.log(`[Cron API] ⚠️ Sent follow-up for "${med.name}" to ${batchResponse.successCount} family device(s)`);
+              }
             }
           } catch (followUpErr: unknown) {
             const msg = followUpErr instanceof Error ? followUpErr.message : "Followup error";
