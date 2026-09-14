@@ -319,9 +319,9 @@ export default function ExpensesPage() {
               Rupaye (Amount) *
             </label>
             <div className="relative flex items-center">
-              <div className="absolute left-3.5 flex items-center justify-center pointer-events-none text-stone-600">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none text-stone-700 z-10">
                 <svg
-                  className="w-6 h-6 text-stone-700"
+                  className="w-6 h-6 text-stone-700 shrink-0"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -347,8 +347,8 @@ export default function ExpensesPage() {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0"
-                className="input-field pl-12 font-extrabold text-2xl text-[#1c1917] w-full"
-                style={{ minHeight: "56px" }}
+                className="input-field font-extrabold text-2xl text-[#1c1917] w-full tracking-wide"
+                style={{ minHeight: "56px", paddingLeft: "3.25rem" }}
               />
             </div>
           </div>
