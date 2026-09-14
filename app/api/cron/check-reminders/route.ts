@@ -202,9 +202,12 @@ async function processReminders(req: NextRequest) {
                   fcmOptions: { link: "/home" },
                 },
                 data: {
+                  title: `💊 Dawai yaad hai! — ${med.assignedTo}`,
+                  body: `${med.name} leni hai (${foodLabel}) — ${med.time}`,
                   medicineName: String(med.name),
                   time: String(med.time),
                   assignedTo: String(med.assignedTo),
+                  url: "/home",
                 },
               });
 
@@ -261,6 +264,14 @@ async function processReminders(req: NextRequest) {
                     requireInteraction: true,
                   },
                   fcmOptions: { link: "/home" },
+                },
+                data: {
+                  title: `⚠️ Follow-up: ${med.assignedTo} ki dawai!`,
+                  body: `${med.name} (${foodLabel}) abhi tak mark nahi hui — ${med.time}`,
+                  medicineName: String(med.name),
+                  time: String(med.time),
+                  assignedTo: String(med.assignedTo),
+                  url: "/home",
                 },
               }));
 

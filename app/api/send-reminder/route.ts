@@ -78,9 +78,12 @@ export async function POST(req: NextRequest) {
         },
       },
       data: {
+        title: `💊 Dawai yaad hai! — ${memberName}`,
+        body: `${medName} leni hai (${foodLabel}) — ${medTime}`,
         medicineName: String(medName),
         time: String(medTime),
         assignedTo: String(memberName),
+        url: "/home",
       },
     };
 
@@ -168,6 +171,14 @@ export async function PUT(req: NextRequest) {
           requireInteraction: true,
         },
         fcmOptions: { link: "/home" },
+      },
+      data: {
+        title: `💊 Follow-up: ${assignedTo} ki dawai!`,
+        body: `${medicineName} (${foodLabel}) abhi tak mark nahi hui — ${time}`,
+        medicineName: String(medicineName),
+        time: String(time),
+        assignedTo: String(assignedTo),
+        url: "/home",
       },
     }));
 
