@@ -83,19 +83,28 @@ const DEVANAGARI_DIGITS: Record<string, string> = {
 
 /**
  * Word numbers in Hindi/Hinglish.
- * Used only when accompanied by currency markers (e.g. "do sau rupaye", "sau rupaye").
  */
 const HINDI_WORD_NUMBERS: Record<string, number> = {
+  "aadha": 0.5, "adha": 0.5, "आधा": 0.5,
   "ek": 1, "एक": 1,
   "do": 2, "दो": 2,
   "teen": 3, "तीन": 3,
   "chaar": 4, "char": 4, "चार": 4,
   "paanch": 5, "panch": 5, "पांच": 5, "पाँच": 5,
-  "che": 6, "chheh": 6, "छह": 6, "छे": 6,
+  "che": 6, "chheh": 6, "chhe": 6, "छह": 6, "छे": 6,
   "saat": 7, "सात": 7,
   "aath": 8, "आठ": 8,
   "nau": 9, "नौ": 9,
   "das": 10, "dus": 10, "दस": 10,
+  "gyarah": 11, "ग्यारह": 11,
+  "barah": 12, "बारह": 12,
+  "terah": 13, "तेरह": 13,
+  "chaudah": 14, "चौदह": 14,
+  "pandrah": 15, "पंद्रह": 15,
+  "solah": 16, "सोलह": 16,
+  "satrah": 17, "सत्रह": 17,
+  "atharah": 18, "अठारह": 18,
+  "unnis": 19, "उन्नीस": 19,
   "bees": 20, "बीस": 20,
   "tees": 30, "तीस": 30,
   "chalis": 40, "चालीस": 40,
@@ -120,14 +129,14 @@ export function normalizeHindiNumbers(text: string): string {
 }
 
 /**
- * Extract financial amount from text.
- * Checks for digit patterns (180, ₹500, Rs 50) and currency-adjacent word numbers.
+ * Extract financial amount from text for expenses.
  */
 function extractExpenseAmount(text: string): number | null {
   const norm = normalizeHindiNumbers(text);
 
   // 1. Explicit currency symbol / prefix / suffix with digits (e.g. "₹180", "180 rupaye", "Rs. 500", "500 ka", "180 ki")
-  const explicitCurrencyMatch = norm.match(/(?:₹|rs\.?|inr)\s*(\d+(?:,\d+)*(?:\.\d+)?)/i) ||
+  const explicitCurrencyMatch =
+    norm.match(/(?:₹|rs\.?|inr)\s*(\d+(?:,\d+)*(?:\.\d+)?)/i) ||
     norm.match(/(\d+(?:,\d+)*(?:\.\d+)?)\s*(?:₹|rs\.?|rupaye|rupee|rupees|inr|रुपये|रुपया)/i);
 
   if (explicitCurrencyMatch) {
@@ -249,27 +258,28 @@ export function parseVoiceInput(rawTranscript: string): ParsedVoiceResult {
   // Trigger: Contains medicine keyword AND (time marker OR reminder context)
   // ─────────────────────────────────────────────────────────────
   const hasMedKeyword =
-    /\b(dawai|dawa|medicine|medicines|tablet|tablets|goli|capsule|capsules|syrup|drops|paracetamol|crocin|combiflam|pantocid|bp|sugar|thyroid|insulin|vitamins|calcium|injection)\b/i.test(lower) ||
-    /(दवाई|दवा|गोली|टैबलेट|कैप्सूल|सिरप|पैरासिटामोल|बीपी|शुगर|इंसुलिन|कैल्शियम|विटामिन)/.test(text);
+    /\b(dawai|dawa|dawaiyan|medicine|medicines|tablet|tablets|goli|goliya|capsule|capsules|syrup|drops|paracetamol|crocin|combiflam|pantocid|bp|sugar|thyroid|insulin|vitamins|calcium|injection|inhaler)\b/i.test(lower) ||
+    /(दवाई|दवा|दवाइयां|गोली|गोलियां|टैबलेट|कैप्सूल|सिरप|पैरासिटामोल|क्रोसिन|बीपी|शुगर|इंसुलिन|थायराइड|कैल्शियम|विटामिन)/.test(text);
 
   const hasTimeKeyword =
     /\b(\d{1,2}(?::\d{2})?\s*(?:baje|am|pm|बजे))\b/i.test(normalized) ||
-    /\b(subah|shaam|dopahar|raat|सुबह|शाम|दोपहर|रात)\s*\d{1,2}\b/i.test(normalized) ||
-    /\b(subah|shaam|dopahar|raat|सुबह|शाम|दोपहर|रात|time|baje|बजे)\b/i.test(lower);
+    /\b(subah|shaam|dopahar|raat|सुबह|शाम|दोपहर|रात)\s*(?:ke\s*)?\d{1,2}\b/i.test(normalized) ||
+    /\b(subah|shaam|dopahar|raat|time|baje|o'?clock|reminder|yaad|lena|leni|सुबह|शाम|दोपहर|रात|बजे|याद|लेना|लेनी)\b/i.test(lower);
 
   const isExplicitMedicalExpense =
-    /(?:rupaye|rupee|rupees|rs\.?|₹|bill|kharcha|fees|fee|रुपये|रुपया|बिल|खर्च|फीस)/i.test(lower);
+    /(?:rupaye|rupee|rupees|rs\.?|₹|bill|kharcha|fees|fee|cost|paid|रुपये|रुपया|बिल|खर्च|फीस)/i.test(lower);
 
-  // If medicine signals are present and it's not explicitly a monetary payment/bill, treat as medicine reminder
-  if (hasMedKeyword && (hasTimeKeyword || /reminder|yaad|lena|khana|time/i.test(lower)) && !isExplicitMedicalExpense) {
-    const parsedMed = parseMedicineIntent(text, normalized);
-    if (parsedMed) return parsedMed;
-  }
+  console.log("[VoiceParser:Medicine] Evaluation:", {
+    rawTranscript: text,
+    hasMedKeyword,
+    hasTimeKeyword,
+    isExplicitMedicalExpense,
+  });
 
-  // Also catch cases where time marker + medicine name is spoken without explicit "dawai" keyword (e.g. "Raat 9 baje paracetamol")
-  if (hasTimeKeyword && !isExplicitMedicalExpense) {
+  if ((hasMedKeyword || hasTimeKeyword) && !isExplicitMedicalExpense) {
     const parsedMed = parseMedicineIntent(text, normalized);
-    if (parsedMed && parsedMed.type === "medicine" && parsedMed.name !== "Dawai") {
+    if (parsedMed) {
+      console.log("[VoiceParser:Medicine] Successfully parsed medicine reminder:", parsedMed);
       return parsedMed;
     }
   }
@@ -280,10 +290,10 @@ export function parseVoiceInput(rawTranscript: string): ParsedVoiceResult {
   // OR phrases with quantity units ("2 kilo", "1 litre") and NO currency markers
   // ─────────────────────────────────────────────────────────────
   const isExplicitShoppingPhrase =
-    /(?:list\s*me|list\s*mein|shopping\s*list|laana\s*hai|lana\s*hai|laana|lana|le\s*aana|le\s*aao|mangwana\s*hai|mangwana|mangwa\s*lo|kharidna\s*hai|kharidna|kharid\s*lo|chahiye|daal\s*do|dal\s*do|add\s*karo|jod\s*do|लिस्ट\s*में|लाना\s*है|लाना|ले\s*आना|ले\s*आओ|मंगवाना|खरीदना|चाहिए|जोड़ो)/i.test(lower);
+    /(?:list\s*me|list\s*mein|shopping\s*list|laana\s*hai|lana\s*hai|laana|lana|le\s*aana|le\s*aao|mangwana\s*hai|mangwana|mangwa\s*lo|kharidna\s*hai|kharidna|kharid\s*lo|chahiye|daal\s*do|daalo|dal\s*do|dalo|add\s*karo|jod\s*do|लिखो|डालो|लिस्ट\s*में|लाना\s*है|लाना|ले\s*आना|ले\s*आओ|मंगवाना|खरीदना|चाहिए|जोड़ो)/i.test(lower);
 
   const hasQuantityUnit =
-    /\b\d+(?:\.\d+)?\s*(?:kilo|kg|gram|gm|g|litre|ltr|l|packet|pkt|darjan|dozen|piece|bottles?|किलो|ग्राम|लीटर|पैकेट)\b/i.test(normalized);
+    /\b(?:\d+(?:\.\d+)?|ek|do|teen|chaar|char|paanch|panch|aadha|adha|dedh|dhai|एक|दो|तीन|चार|पांच|आधा|डेढ़|ढाई)\s*(?:kilo|kg|kgs|kilos|gram|gm|gms|g|litre|liter|litres|ltr|l|packet|packets|pkt|darjan|dozen|piece|pcs|bottles?|किलो|ग्राम|लीटर|पैकेट)\b/i.test(normalized);
 
   const hasCurrencyMarker =
     /(?:₹|rs\.?|rupaye|rupee|rupees|inr|रुपये|रुपया|bill|बिल|kharcha|kharch|खर्च|खर्चा)/i.test(lower);
@@ -291,6 +301,7 @@ export function parseVoiceInput(rawTranscript: string): ParsedVoiceResult {
   if ((isExplicitShoppingPhrase || hasQuantityUnit) && !hasCurrencyMarker) {
     const shoppingItems = parseShoppingIntent(text);
     if (shoppingItems.length > 0) {
+      console.log("[VoiceParser:Shopping] Successfully parsed shopping items:", shoppingItems);
       return {
         type: "shopping",
         items: shoppingItems,
@@ -315,6 +326,7 @@ export function parseVoiceInput(rawTranscript: string): ParsedVoiceResult {
       .replace(/(?:aaj|kal|ko|ka|ki|ke|rupaye|rupee|rs\.?|₹|\d+|खर्च|रुपये|का|की|में|add\s*karo|jod\s*do|likh\s*lo)/gi, "")
       .trim();
 
+    console.log("[VoiceParser:Expense] Successfully parsed expense:", { amount, category: matchedCat, note });
     return {
       type: "expense",
       amount,
@@ -328,6 +340,7 @@ export function parseVoiceInput(rawTranscript: string): ParsedVoiceResult {
   // ─────────────────────────────────────────────────────────────
   // 4. Fallback / Unknown Intent
   // ─────────────────────────────────────────────────────────────
+  console.log("[VoiceParser:Fallback] No high-confidence match for:", text);
   return {
     type: "unknown",
     rawText: text,
@@ -342,27 +355,41 @@ function parseMedicineIntent(text: string, normalized: string): ParsedVoiceResul
   let minute = 0;
   let isPM = /\b(shaam|raat|dopahar|pm|शाम|रात|दोपहर)\b/i.test(normalized);
 
-  const timeMatch = normalized.match(/(\d{1,2})(?::(\d{2}))?\s*(?:baje|am|pm|बजे)?/i);
+  // Match standard time expressions like "8 baje", "8:30", "9 am", "subah 8"
+  const timeDigitsMatch =
+    normalized.match(/(\d{1,2})(?::(\d{2}))?\s*(?:baje|am|pm|बजे)/i) ||
+    normalized.match(/(?:subah|shaam|dopahar|raat|सुबह|शाम|दोपहर|रात)\s*(?:ke\s*)?(\d{1,2})(?::(\d{2}))?/i) ||
+    normalized.match(/\b(\d{1,2})(?::(\d{2}))\b/);
 
-  if (timeMatch && timeMatch[1]) {
-    hour = parseInt(timeMatch[1], 10);
-    if (timeMatch[2]) minute = parseInt(timeMatch[2], 10);
+  if (timeDigitsMatch) {
+    hour = parseInt(timeDigitsMatch[1], 10);
+    if (timeDigitsMatch[2]) minute = parseInt(timeDigitsMatch[2], 10);
 
     if (isPM && hour < 12) hour += 12;
     if (!isPM && /\b(subah|am|सुबह)\b/i.test(normalized) && hour === 12) hour = 0;
   } else {
-    if (/\b(subah|सुबह)\b/i.test(normalized)) hour = 8;
-    else if (/\b(dopahar|दोपहर)\b/i.test(normalized)) hour = 13;
-    else if (/\b(shaam|शाम)\b/i.test(normalized)) hour = 18;
-    else if (/\b(raat|रात)\b/i.test(normalized)) hour = 21;
+    // Check for spoken word numbers with "baje" (e.g. "aath baje", "nau baje", "chhe baje")
+    const wordTimeMatch = normalized.match(/\b(ek|do|teen|chaar|char|paanch|panch|che|chhe|chheh|saat|aath|nau|das|dus|gyarah|barah)\s*(?:baje|बजे)/i);
+    if (wordTimeMatch && HINDI_WORD_NUMBERS[wordTimeMatch[1]]) {
+      hour = HINDI_WORD_NUMBERS[wordTimeMatch[1]];
+      if (isPM && hour < 12) hour += 12;
+      if (!isPM && /\b(subah|am|सुबह)\b/i.test(normalized) && hour === 12) hour = 0;
+    } else {
+      // Default time by time of day
+      if (/\b(subah|सुबह)\b/i.test(normalized)) hour = 8;
+      else if (/\b(dopahar|दोपहर)\b/i.test(normalized)) hour = 13;
+      else if (/\b(shaam|शाम)\b/i.test(normalized)) hour = 18;
+      else if (/\b(raat|रात)\b/i.test(normalized)) hour = 21;
+    }
   }
 
   const timeStr = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-  const takenAfterFood = !/(?:khali\s*pet|bina\s*khaye|khane\s*se\s*pehle|खाली\s*पेट)/i.test(normalized);
+  const takenAfterFood = !/(?:khali\s*pet|bina\s*khaye|khane\s*se\s*pehle|खाली\s*पेट|पहले)/i.test(normalized);
 
+  // Clean medicine name
   let medName = text
-    .replace(/\b(?:kal|aaj|subah|shaam|dopahar|raat|baje|\d{1,2}(?::\d{2})?|am|pm|ki|ka|ke|ko|se|dawai|dawa|medicine|tablet|goli|lena|dena|yaad\s*dilana|reminder|set\s*karo|add\s*karo|khane\s*ke\s*baad|khali\s*pet|khane\s*se\s*pehle|khana|baad|pehle)\b/gi, " ")
-    .replace(/(?:दवाई|दवा|गोली|बजे|सुबह|शाम|रात|कल|खाने\s*के\s*बाद|खाली\s*पेट|पहले|खाना)/g, " ")
+    .replace(/\b(?:kal|aaj|subah|shaam|dopahar|raat|baje|\d{1,2}(?::\d{2})?|am|pm|ki|ka|ke|ko|se|me|dawai|dawa|dawaiyan|medicine|medicines|tablet|tablets|goli|goliya|capsule|capsules|syrup|drops|lena|leni|dena|yaad\s*dilana|reminder|set\s*karo|add\s*karo|khane\s*ke\s*baad|khali\s*pet|khane\s*se\s*pehle|khana|baad|pehle)\b/gi, " ")
+    .replace(/(?:दवाई|दवा|दवाइयां|गोली|गोलियां|टैबलेट|कैप्सूल|सिरप|बजे|सुबह|शाम|रात|कल|खाने\s*के\s*बाद|खाली\s*पेट|पहले|खाना|लेना|लेनी)/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -384,30 +411,43 @@ function parseMedicineIntent(text: string, normalized: string): ParsedVoiceResul
 
 // ─── Helpers: Shopping List Parsing ───────────────────────────
 
+/**
+ * Universal quantity matcher for shopping items.
+ * Matches: "2 kilo", "1 litre", "500 gram", "1 packet", "ek kilo", "aadha kilo", "2 kg", "1.5 ltr"
+ */
+const SHOPPING_QTY_REGEX =
+  /(?:^|\s)((?:(?:\d+(?:\.\d+)?)|(?:ek|do|teen|chaar|char|paanch|panch|aadha|adha|dedh|dhai|एक|दो|तीन|चार|पांच|आधा|डेढ़|ढाई))\s*(?:kilo|kg|kgs|kilos|gram|gm|gms|g|litre|liter|litres|ltr|l|packet|packets|pkt|darjan|dozen|piece|pcs|bottles?|किलो|ग्राम|लीटर|पैकेट|दर्जन|बोतल|पीस))(?:\s|$)/i;
+
 function parseShoppingIntent(text: string): { itemName: string; quantity?: string }[] {
+  // Strip command phrases & fillers
   let cleaned = text
-    .replace(/(?:shopping\s*list\s*me|list\s*me|list\s*mein|me\s*daal\s*do|daal\s*do|dal\s*do|add\s*karo|jod\s*do|laana\s*hai|lana\s*hai|le\s*aana|le\s*aao|mangwana\s*hai|mangwa\s*lo|kharidna\s*hai|chahiye|kripya|please|लिस्ट\s*में\s*डाल\s*दो|लिस्ट\s*में|लाना\s*है|ले\s*आना|चाहिए)/gi, " ")
+    .replace(/(?:shopping\s*list\s*me\s*(?:daal\s*do|daalo|dal\s*do|dalo|likho|likh\s*do|add\s*karo|jod\s*do)?|list\s*me\s*(?:daal\s*do|daalo|dal\s*do|dalo|likho|likh\s*do|add\s*karo|jod\s*do)?|list\s*mein\s*(?:daal\s*do|daalo|dal\s*do|dalo|likho|likh\s*do|add\s*karo|jod\s*do)?|me\s*daal\s*do|me\s*daalo|daal\s*do|daalo|dal\s*do|dalo|add\s*karo|jod\s*do|laana\s*hai|lana\s*hai|laana|lana|le\s*aana|le\s*aao|mangwana\s*hai|mangwana|mangwa\s*lo|kharidna\s*hai|kharidna|kharid\s*lo|chahiye|kripya|please|लिस्ट\s*में\s*(?:डाल\s*दो|डालो|लिखो)?|लाना\s*है|लाना|ले\s*आना|ले\s*आओ|मंगवाना|खरीदना|चाहिए)/gi, " ")
+    .replace(/\s+/g, " ")
     .trim();
 
+  // Split multiple items separated by "aur", "and", "tatha", "evam", "saath me", ",", "+"
   const rawParts = cleaned.split(/(?:\s+(?:aur|and|tatha|evam|saath\s*me|और|एवं)\s+|,|\+)/i);
   const results: { itemName: string; quantity?: string }[] = [];
 
   for (const part of rawParts) {
-    const itemStr = part.trim();
+    let itemStr = part.trim();
     if (!itemStr || itemStr.length < 2) continue;
 
-    const qtyMatch = itemStr.match(/(\d+(?:\.\d+)?\s*(?:kilo|kg|gram|gm|g|litre|ltr|l|packet|pkt|darjan|dozen|piece|bottles?|किलो|ग्राम|लीटर|पैकेट))/i);
-
     let quantity: string | undefined = undefined;
-    let itemName = itemStr;
 
-    if (qtyMatch && qtyMatch[0].trim().length > 0) {
-      quantity = qtyMatch[0].trim();
-      itemName = itemName.replace(qtyMatch[0], "").trim();
+    // Check for quantity anywhere in the item phrase (e.g. "2 kilo aata" or "aata 2 kilo")
+    const qtyMatch = itemStr.match(SHOPPING_QTY_REGEX);
+    if (qtyMatch && qtyMatch[1]) {
+      quantity = qtyMatch[1].trim();
+      // Remove quantity from item name string
+      itemStr = itemStr.replace(qtyMatch[1], " ").replace(/\s+/g, " ").trim();
     }
 
-    if (itemName.length > 0) {
-      const formattedName = itemName.charAt(0).toUpperCase() + itemName.slice(1);
+    // Strip remaining auxiliary words
+    itemStr = itemStr.replace(/\b(?:bhi|saath|me|mein|aur|and|भी|और)\b/gi, "").trim();
+
+    if (itemStr.length > 0) {
+      const formattedName = itemStr.charAt(0).toUpperCase() + itemStr.slice(1);
       results.push({
         itemName: formattedName,
         quantity: quantity || undefined,
