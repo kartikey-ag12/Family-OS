@@ -193,9 +193,83 @@ export default function VoiceInputModal() {
     setInterimText("");
   }, []);
 
+  // Parse voice input using Gemini 2.5 Flash API with local rule-based fallback
+  const parseVoiceWithAI = useCallback(async (transcript: string): Promise<ParsedVoiceResult> => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const res = await fetch("/api/voice/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        console.log("[VoiceAssistant:AI] Gemini parser response:", data);
+
+        if (data.type === "expense" && typeof data.amount === "number") {
+          return {
+            type: "expense",
+            amount: data.amount,
+            category: (data.category as ExpenseCategory) || "Others",
+            note: data.note,
+            confidence: "high",
+            rawText: transcript,
+          };
+        }
+
+        if (data.type === "shopping" && Array.isArray(data.items) && data.items.length > 0) {
+          return {
+            type: "shopping",
+            items: data.items.map((item: any) => ({
+              itemName: item.name || item.itemName || "Item",
+              quantity: item.quantity || undefined,
+            })),
+            confidence: "high",
+            rawText: transcript,
+          };
+        }
+
+        if (data.type === "medicine" && data.name) {
+          return {
+            type: "medicine",
+            name: data.name,
+            time: data.time || "08:00",
+            takenAfterFood: data.takenAfterFood !== undefined ? !!data.takenAfterFood : true,
+            confidence: "high",
+            rawText: transcript,
+          };
+        }
+
+        return {
+          type: "unknown",
+          rawText: transcript,
+          suggestedName: transcript.slice(0, 50),
+        };
+      }
+    } catch (err) {
+      console.warn("[VoiceAssistant] Gemini API fetch failed or timed out, falling back to local parser:", err);
+    }
+
+    // Graceful fallback to rule-based parser
+    try {
+      return parseVoiceInput(transcript);
+    } catch (_) {
+      return {
+        type: "unknown",
+        rawText: transcript,
+        suggestedName: transcript.slice(0, 50),
+      };
+    }
+  }, []);
+
   // Process incoming speech text based on current state machine mode
   const handleSpeechResult = useCallback(
-    (spokenText: string) => {
+    async (spokenText: string) => {
       const text = spokenText.trim();
       if (!text) return;
 
@@ -232,7 +306,8 @@ export default function VoiceInputModal() {
         }
 
         // If not yes/no, user might be speaking a NEW command instead
-        const newResult = parseVoiceInput(text);
+        setAssistantPrompt("AI samajh raha hai...");
+        const newResult = await parseVoiceWithAI(text);
         if (newResult.type !== "unknown") {
           setPendingResult(newResult);
           pendingResultRef.current = newResult;
@@ -248,7 +323,8 @@ export default function VoiceInputModal() {
       }
 
       // ─── Mode 2: Listening for a Command ───
-      const result = parseVoiceInput(text);
+      setAssistantPrompt("AI samajh raha hai...");
+      const result = await parseVoiceWithAI(text);
 
       if (result.type !== "unknown") {
         setPendingResult(result);
@@ -266,7 +342,7 @@ export default function VoiceInputModal() {
         setAssistantPrompt("Samajh nahi aaya, kya karna hai? Neeche diye options chunein ya dobara bole.");
       }
     },
-    [executeSaveAction, resetSilenceTimer, stopContinuousSession]
+    [executeSaveAction, parseVoiceWithAI, resetSilenceTimer, stopContinuousSession]
   );
 
   // Initialize Web Speech API instance
