@@ -73,3 +73,27 @@ export interface ShoppingItem {
   boughtAt?: Date | null;
 }
 
+export type ExpenseCategory =
+  | "Sabzi"
+  | "Doodh"
+  | "Grocery"
+  | "Electricity"
+  | "Recharge"
+  | "Petrol"
+  | "Medical"
+  | "Repair"
+  | "Rent/EMI"
+  | "Others";
+
+export interface Expense {
+  id: string;
+  familyId: string;
+  amount: number;
+  category: ExpenseCategory;
+  note?: string;
+  addedBy: string; // displayName
+  addedByUid: string;
+  date: Date; // date of expense
+  createdAt: Date;
+}
+

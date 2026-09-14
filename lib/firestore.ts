@@ -27,6 +27,7 @@ import type {
   Medicine,
   MedicineStatusRecord,
   ShoppingItem,
+  Expense,
 } from "./types";
 
 // ─── Utilities ────────────────────────────────────────────────
@@ -507,4 +508,66 @@ export async function clearBoughtShoppingItems(
   }
   await batch.commit();
 }
+
+// ─── Expenses (Ghar ka Hisab) ─────────────────────────────────
+
+export async function addExpense(
+  expense: Omit<Expense, "id" | "createdAt">
+): Promise<string> {
+  const ref = doc(collection(db, "expenses"));
+  await setDoc(ref, {
+    familyId: expense.familyId,
+    amount: Number(expense.amount),
+    category: expense.category,
+    note: expense.note?.trim() || null,
+    addedBy: expense.addedBy,
+    addedByUid: expense.addedByUid,
+    date: Timestamp.fromDate(expense.date),
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+}
+
+export function subscribeExpenses(
+  familyId: string,
+  callback: (expenses: Expense[]) => void
+): () => void {
+  const q = query(
+    collection(db, "expenses"),
+    where("familyId", "==", familyId)
+  );
+
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: Expense[] = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          familyId: data.familyId,
+          amount: Number(data.amount) || 0,
+          category: data.category,
+          note: data.note ?? undefined,
+          addedBy: data.addedBy,
+          addedByUid: data.addedByUid,
+          date: fromTimestamp(data.date) ?? new Date(),
+          createdAt: fromTimestamp(data.createdAt) ?? new Date(),
+        };
+      });
+
+      // Sort by date descending (most recent first)
+      list.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+      callback(list);
+    },
+    (err) => {
+      console.error("[Firestore:subscribeExpenses] Error:", err);
+    }
+  );
+}
+
+export async function deleteExpense(expenseId: string): Promise<void> {
+  await deleteDoc(doc(db, "expenses", expenseId));
+}
+
 

@@ -75,5 +75,17 @@ service cloud.firestore {
       // Any family member can delete / clear bought items
       allow delete: if isSignedIn() && isFamilyMember(resource.data.familyId);
     }
+
+    // ─── expenses collection ──────────────────────────────────
+    match /expenses/{expenseId} {
+      // Family members can read all expenses for their family
+      allow read: if isSignedIn() && isFamilyMember(resource.data.familyId);
+      // Any family member can record expenses
+      allow create: if isSignedIn() && isFamilyMember(request.resource.data.familyId);
+      // Any family member can update expenses
+      allow update: if isSignedIn() && isFamilyMember(resource.data.familyId);
+      // Any family member can delete expenses
+      allow delete: if isSignedIn() && isFamilyMember(resource.data.familyId);
+    }
   }
 }

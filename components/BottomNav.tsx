@@ -9,7 +9,8 @@ import { usePathname } from "next/navigation";
 const tabs = [
   { href: "/home", label: "Aaj", icon: "🏠", id: "nav-home" },
   { href: "/shopping", label: "Samaan", icon: "🛒", id: "nav-shopping" },
-  { href: "/add", label: "Jodo", icon: "➕", id: "nav-add" },
+  { href: "/expenses", label: "Hisab", icon: "💰", id: "nav-expenses" },
+  { href: "/add", label: "Dawai +", icon: "💊", id: "nav-add" },
   { href: "/family", label: "Parivaar", icon: "👨‍👩‍👧‍👦", id: "nav-family" },
   { href: "/settings", label: "Settings", icon: "⚙️", id: "nav-settings" },
 ];
