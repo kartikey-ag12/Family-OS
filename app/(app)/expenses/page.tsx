@@ -78,8 +78,9 @@ export default function ExpensesPage() {
 
   // Subscribe to real-time expenses
   useEffect(() => {
+    if (authLoading) return;
     if (!profile?.familyId) {
-      if (!authLoading) setLoading(false);
+      setLoading(false);
       return;
     }
 

@@ -53,8 +53,9 @@ export default function ShoppingPage() {
 
   // Real-time subscription to family's shopping items
   useEffect(() => {
+    if (authLoading) return;
     if (!profile?.familyId) {
-      if (!authLoading) setLoading(false);
+      setLoading(false);
       return;
     }
 

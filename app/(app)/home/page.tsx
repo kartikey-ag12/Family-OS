@@ -31,8 +31,9 @@ export default function HomePage() {
 
   // Subscribe to real-time medicines updates
   useEffect(() => {
+    if (authLoading) return;
     if (!profile?.familyId) {
-      if (!authLoading) setLoading(false);
+      setLoading(false);
       return;
     }
 
@@ -55,14 +56,14 @@ export default function HomePage() {
 
   // Subscribe to real-time status updates
   useEffect(() => {
-    if (!profile?.familyId) return;
+    if (authLoading || !profile?.familyId) return;
     const unsubscribe = subscribeTodaysStatus(profile.familyId, (records) => {
       const map = new Map<string, MedicineStatusRecord>();
       records.forEach((r) => map.set(r.medicineId, r));
       setStatusMap(map);
     });
     return unsubscribe;
-  }, [profile?.familyId]);
+  }, [profile?.familyId, authLoading]);
 
   // Initialize FCM push notifications
   useEffect(() => {

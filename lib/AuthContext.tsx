@@ -61,30 +61,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    let isMounted = true;
+
     const unsub = onAuthStateChanged(
       auth,
       async (u) => {
+        if (!isMounted) return;
         setUser(u);
-        setLoading(false);
         if (u) {
-          await loadProfile(u);
+          try {
+            await loadProfile(u);
+          } catch (err) {
+            console.error("Auth profile load error:", err);
+          }
         } else {
           setProfile(null);
           setFamily(null);
         }
+        if (isMounted) {
+          setLoading(false);
+        }
       },
       (error) => {
         console.error("Auth state error:", error);
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     );
 
-    // Safety fallback timeout to prevent infinite loading screen
+    // Fallback safety timeout (5 seconds for slower mobile networks)
     const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
+      if (isMounted) setLoading(false);
+    }, 5000);
 
     return () => {
+      isMounted = false;
       unsub();
       clearTimeout(timer);
     };

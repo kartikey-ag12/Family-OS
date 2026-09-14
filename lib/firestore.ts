@@ -202,11 +202,51 @@ export async function addMedicine(
   medicine: Omit<Medicine, "id">
 ): Promise<string> {
   const ref = doc(collection(db, "medicines"));
+  const startDate = medicine.startDate || new Date();
+
   await setDoc(ref, {
-    ...medicine,
-    startDate: Timestamp.fromDate(medicine.startDate),
+    familyId: medicine.familyId,
+    name: medicine.name.trim(),
+    time: medicine.time,
+    frequency: medicine.frequency || "daily",
+    days: medicine.days && medicine.days.length > 0 ? medicine.days : [0, 1, 2, 3, 4, 5, 6],
+    takenAfterFood: medicine.takenAfterFood !== undefined ? medicine.takenAfterFood : true,
+    assignedTo: medicine.assignedTo || "Family Member",
+    assignedToUid: medicine.assignedToUid,
+    durationDays: medicine.durationDays ?? null,
+    startDate: Timestamp.fromDate(startDate),
+    createdBy: medicine.createdBy,
+    active: true,
     createdAt: serverTimestamp(),
   });
+
+  // Ensure initial today's status record is created immediately
+  try {
+    const today = todayDateString();
+    const statusRef = doc(db, "medicineStatus", statusDocId(today, ref.id));
+    await setDoc(
+      statusRef,
+      {
+        medicineId: ref.id,
+        familyId: medicine.familyId,
+        date: today,
+        status: "pending",
+        markedAt: null,
+        markedBy: null,
+        markedByName: null,
+        notificationSent: false,
+        followUpSent: false,
+        medicineName: medicine.name.trim(),
+        medicineTime: medicine.time,
+        assignedTo: medicine.assignedTo || "Family Member",
+        takenAfterFood: medicine.takenAfterFood !== undefined ? medicine.takenAfterFood : true,
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    console.warn("Initial status record creation warning:", err);
+  }
+
   return ref.id;
 }
 
@@ -257,18 +297,15 @@ export function subscribeTodaysMedicines(
 ): () => void {
   const q = query(
     collection(db, "medicines"),
-    where("familyId", "==", familyId),
-    where("active", "==", true),
-    orderBy("time")
+    where("familyId", "==", familyId)
   );
 
   return onSnapshot(
     q,
     (snap) => {
-      const raw = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      console.log(`[Firestore:subscribeTodaysMedicines] familyId="${familyId}" raw medicines count: ${raw.length}`, raw);
       const filtered = parseAndFilterMedicines(snap.docs);
-      console.log(`[Firestore:subscribeTodaysMedicines] filtered for today (${new Date().toLocaleDateString()}):`, filtered);
+      // Sort by scheduled time ascending
+      filtered.sort((a, b) => a.time.localeCompare(b.time));
       callback(filtered);
     },
     (err) => {
@@ -280,15 +317,11 @@ export function subscribeTodaysMedicines(
 export async function getTodaysMedicines(familyId: string): Promise<Medicine[]> {
   const q = query(
     collection(db, "medicines"),
-    where("familyId", "==", familyId),
-    where("active", "==", true),
-    orderBy("time")
+    where("familyId", "==", familyId)
   );
   const snap = await getDocs(q);
-  const raw = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  console.log(`[Firestore:getTodaysMedicines] familyId="${familyId}" raw fetched count: ${raw.length}`, raw);
   const filtered = parseAndFilterMedicines(snap.docs);
-  console.log(`[Firestore:getTodaysMedicines] filtered for today (${new Date().toLocaleDateString()}):`, filtered);
+  filtered.sort((a, b) => a.time.localeCompare(b.time));
   return filtered;
 }
 
