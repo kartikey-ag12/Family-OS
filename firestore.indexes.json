@@ -1,0 +1,22 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "medicines",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "active", "order": "ASCENDING" },
+        { "fieldPath": "familyId", "order": "ASCENDING" },
+        { "fieldPath": "time", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "medicineStatus",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "familyId", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

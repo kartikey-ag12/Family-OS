@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Family OS — Offline</title>
+  <style>
+    body {
+      font-family: 'Noto Sans', system-ui, sans-serif;
+      background: #fff7ed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      color: #1c1917;
+    }
+    .container { max-width: 400px; }
+    h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+    p { font-size: 1.1rem; color: #78716c; margin-bottom: 24px; }
+    button {
+      background: #f97316;
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 16px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div style="font-size: 5rem; margin-bottom: 16px;">📵</div>
+    <h1>Internet nahi hai</h1>
+    <p>Network connection check karein aur dobara try karein. App ke basic features offline bhi kaam karte hain.</p>
+    <button onclick="window.location.reload()">🔄 Dobara Try Karein</button>
+  </div>
+</body>
+</html>

@@ -1,0 +1,79 @@
+// firestore.rules
+// ============================================================
+// Firestore Security Rules for Family OS
+// ============================================================
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helper Functions ────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function getUserFamilyId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.familyId;
+    }
+
+    function isFamilyMember(familyId) {
+      return isSignedIn() && getUserFamilyId() == familyId;
+    }
+
+    // ─── users collection ────────────────────────────────────
+    match /users/{uid} {
+      // Users can read/write their own profile
+      allow read: if isSignedIn();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid);
+      allow delete: if false;
+    }
+
+    // ─── families collection ─────────────────────────────────
+    match /families/{familyId} {
+      // Any signed-in user can read a family (needed for invite code lookup)
+      allow read: if isSignedIn();
+      // Only create if authenticated
+      allow create: if isSignedIn();
+      // Only family members can update
+      allow update: if isFamilyMember(familyId);
+      allow delete: if false;
+    }
+
+    // ─── medicines collection ────────────────────────────────
+    match /medicines/{medicineId} {
+      // Family members can read and write medicines for their family
+      allow read: if isSignedIn() && isFamilyMember(resource.data.familyId);
+      allow create: if isSignedIn() && isFamilyMember(request.resource.data.familyId);
+      allow update: if isSignedIn() && isFamilyMember(resource.data.familyId);
+      allow delete: if false; // Use active=false instead
+    }
+
+    // ─── medicineStatus collection ───────────────────────────
+    match /medicineStatus/{statusId} {
+      // Family members can read all status records for their family
+      allow read: if isSignedIn() && isFamilyMember(resource.data.familyId);
+      // Any family member can create status records (ensureTodaysStatusRecords)
+      allow create: if isSignedIn() && isFamilyMember(request.resource.data.familyId);
+      // Any family member can mark medicines (taken/skipped)
+      allow update: if isSignedIn() && isFamilyMember(resource.data.familyId);
+      allow delete: if false;
+    }
+
+    // ─── shoppingItems collection ─────────────────────────────
+    match /shoppingItems/{itemId} {
+      // Family members can read all shopping items for their family
+      allow read: if isSignedIn() && isFamilyMember(resource.data.familyId);
+      // Any family member can add shopping items
+      allow create: if isSignedIn() && isFamilyMember(request.resource.data.familyId);
+      // Any family member can mark items as bought/unbought
+      allow update: if isSignedIn() && isFamilyMember(resource.data.familyId);
+      // Any family member can delete / clear bought items
+      allow delete: if isSignedIn() && isFamilyMember(resource.data.familyId);
+    }
+  }
+}

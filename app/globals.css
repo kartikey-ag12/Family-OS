@@ -1,0 +1,117 @@
+/* ============================================================
+   app/globals.css — Global styles + Tailwind base
+   ============================================================ */
+@import "tailwindcss";
+
+@theme {
+  --color-family-primary: #f97316;
+  --color-family-primary-dark: #ea6c0a;
+  --color-family-success: #16a34a;
+  --color-family-warning: #d97706;
+  --color-family-danger: #dc2626;
+  --color-family-bg: #fff7ed;
+  --color-family-card: #ffffff;
+  --color-family-text: #1c1917;
+  --color-family-muted: #78716c;
+  --color-family-border: #e7e5e4;
+
+  --font-family-sans: "Noto Sans", system-ui, sans-serif;
+  --font-size-base: 18px;
+}
+
+html {
+  font-size: 18px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  background-color: var(--color-family-bg);
+  color: var(--color-family-text);
+  min-height: 100dvh;
+  overscroll-behavior: none;
+}
+
+/* Safe area insets for notched Android phones */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Large tap targets for elderly users */
+.btn-primary {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  width: 100%;
+  transition: transform 0.1s, opacity 0.1s;
+  cursor: pointer;
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+/* Input style for elderly-friendly forms */
+.input-field {
+  min-height: 52px;
+  border-radius: 12px;
+  border: 2px solid var(--color-family-border);
+  padding: 12px 16px;
+  font-size: 1.1rem;
+  width: 100%;
+  background: white;
+  color: var(--color-family-text);
+  transition: border-color 0.2s;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--color-family-primary);
+}
+
+/* Card component */
+.card {
+  background: var(--color-family-card);
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+}
+
+/* Status badge */
+.badge-taken {
+  background: #dcfce7;
+  color: #15803d;
+  border-radius: 100px;
+  padding: 4px 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.badge-skipped {
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 100px;
+  padding: 4px 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.badge-pending {
+  background: #f3f4f6;
+  color: #6b7280;
+  border-radius: 100px;
+  padding: 4px 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Scroll area */
+.scroll-area {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
