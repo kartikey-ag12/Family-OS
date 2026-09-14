@@ -16,7 +16,7 @@ export type ParsedVoiceResult =
     }
   | {
       type: "shopping";
-      items: { itemName: string; quantity?: string }[];
+      items: { itemName: string; name?: string; quantity?: string }[];
       confidence: "high" | "medium";
       rawText: string;
     }
@@ -47,7 +47,7 @@ export function isVoiceStopPhrase(text: string): boolean {
 export function isVoiceConfirmationYes(text: string): boolean {
   const t = text.toLowerCase().trim();
   return (
-    /\b(haan|ha|han|haa|yes|yeah|yep|ok|okay|theek\s*hai|sahi\s*hai|kardo|kar\s*do|add\s*karo|save\s*karo|jod\s*do|daal\s*do|ji\s*haan|sure|correct)\b/i.test(t) ||
+    /\b(haan|ha|han|haa|haaan|yes|yeah|yep|ok|okay|theek\s*hai|thik\s*hai|sahi\s*hai|kardo|kar\s*do|add\s*karo|save\s*karo|jod\s*do|daal\s*do|ji\s*haan|sure|correct)\b/i.test(t) ||
     /(हां|हाँ|सही\s*है|हाँ\s*करो|ठीक\s*है|यस|ओके|जोड़ो|डाल\s*दो|कर\s*दो|सेव)/.test(t)
   );
 }
@@ -65,8 +65,10 @@ export function getVoiceConfirmationPrompt(result: ParsedVoiceResult): string {
     return `${result.category} ₹${result.amount} add karu? 'Haan' ya 'Cancel' boliye`;
   }
   if (result.type === "shopping") {
-    const names = result.items.map((i) => i.itemName + (i.quantity ? ` (${i.quantity})` : "")).join(", ");
-    return `${names} shopping list me add karu? 'Haan' ya 'Cancel' boliye`;
+    const names = (result.items || [])
+      .map((i: any) => (i.itemName || i.name || "Item") + (i.quantity ? ` (${i.quantity})` : ""))
+      .join(", ");
+    return `${names || "Items"} shopping list me add karu? 'Haan' ya 'Cancel' boliye`;
   }
   if (result.type === "medicine") {
     return `${result.name} dawai (${result.time}) reminder add karu? 'Haan' ya 'Cancel' boliye`;

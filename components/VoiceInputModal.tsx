@@ -102,7 +102,18 @@ export default function VoiceInputModal() {
   // Save parsed result to Firestore
   const executeSaveAction = useCallback(
     async (target: ParsedVoiceResult) => {
-      if (!profile?.familyId || !user || saving) return;
+      console.log("[VoiceAssistant:Save] executeSaveAction called with target:", JSON.stringify(target, null, 2));
+      if (!profile?.familyId || !user) {
+        console.warn("[VoiceAssistant:Save] Save blocked: missing profile.familyId or user", {
+          hasFamilyId: !!profile?.familyId,
+          hasUser: !!user,
+        });
+        return;
+      }
+      if (saving) {
+        console.warn("[VoiceAssistant:Save] Save blocked: already in saving state");
+        return;
+      }
 
       setSaving(true);
       const familyId = profile.familyId;
@@ -122,18 +133,35 @@ export default function VoiceInputModal() {
           });
           summary = `💰 ${target.category} ₹${target.amount}`;
         } else if (target.type === "shopping") {
-          for (const item of target.items) {
+          console.log("[VoiceAssistant:Save:Shopping] Target items to save:", target.items);
+          const rawItems = Array.isArray(target.items) ? target.items : [target.items];
+          for (const rawItem of rawItems) {
+            const itemObj = typeof rawItem === "string" ? { itemName: rawItem, quantity: undefined } : rawItem;
+            const finalName = (itemObj.itemName || (itemObj as any).name || (itemObj as any).item || "").trim();
+            if (!finalName) {
+              console.warn("[VoiceAssistant:Save:Shopping] Skipping item with empty name:", rawItem);
+              continue;
+            }
+            const finalQty = typeof itemObj.quantity === "string" ? itemObj.quantity.trim() : undefined;
+
             await addShoppingItem({
               familyId,
-              itemName: item.itemName,
-              quantity: item.quantity,
+              itemName: finalName,
+              quantity: finalQty,
               addedBy: userName,
               addedByUid: user.uid,
               isBought: false,
             });
+            console.log(`[VoiceAssistant:Save:Shopping] Successfully saved "${finalName}" (qty: ${finalQty || "none"}) to Firestore.`);
           }
-          const itemNames = target.items.map((i) => i.itemName + (i.quantity ? ` (${i.quantity})` : "")).join(", ");
-          summary = `🛒 ${itemNames}`;
+          const itemNames = rawItems
+            .map((i: any) => {
+              const n = typeof i === "string" ? i : (i.itemName || i.name || "Item");
+              const q = typeof i === "object" && i.quantity ? ` (${i.quantity})` : "";
+              return n + q;
+            })
+            .join(", ");
+          summary = `🛒 ${itemNames || "Items"}`;
         } else if (target.type === "medicine") {
           await addMedicine({
             familyId,
@@ -193,7 +221,7 @@ export default function VoiceInputModal() {
     setInterimText("");
   }, []);
 
-  // Parse voice input using Gemini 2.5 Flash API with local rule-based fallback
+  // Parse voice input using Gemini API with local rule-based fallback
   const parseVoiceWithAI = useCallback(async (transcript: string): Promise<ParsedVoiceResult> => {
     try {
       const controller = new AbortController();
@@ -209,7 +237,7 @@ export default function VoiceInputModal() {
 
       if (res.ok) {
         const data = await res.json();
-        console.log("[VoiceAssistant:AI] Gemini parser response:", data);
+        console.log("[VoiceAssistant:AI] Raw Gemini parser API response:", JSON.stringify(data, null, 2));
 
         if (data.type === "expense" && typeof data.amount === "number") {
           return {
@@ -222,16 +250,44 @@ export default function VoiceInputModal() {
           };
         }
 
-        if (data.type === "shopping" && Array.isArray(data.items) && data.items.length > 0) {
-          return {
-            type: "shopping",
-            items: data.items.map((item: any) => ({
-              itemName: item.name || item.itemName || "Item",
-              quantity: item.quantity || undefined,
-            })),
-            confidence: "high",
-            rawText: transcript,
-          };
+        if (data.type === "shopping") {
+          const capitalize = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+          let extractedItems: { itemName: string; name?: string; quantity?: string }[] = [];
+
+          if (Array.isArray(data.items) && data.items.length > 0) {
+            extractedItems = data.items.map((item: any) => {
+              if (typeof item === "string") {
+                const n = capitalize(item.trim());
+                return { itemName: n, name: n, quantity: undefined };
+              }
+              const rawName = (item.name || item.itemName || item.item || "Item").trim();
+              const name = capitalize(rawName);
+              const quantity = item.quantity || item.qty || undefined;
+              return {
+                itemName: name,
+                name: name,
+                quantity: quantity ? String(quantity).trim() : undefined,
+              };
+            });
+          } else if (data.item || data.name || data.itemName) {
+            const rawName = (data.name || data.itemName || data.item || "Item").trim();
+            const name = capitalize(rawName);
+            const quantity = data.quantity || data.qty || undefined;
+            extractedItems = [{
+              itemName: name,
+              name: name,
+              quantity: quantity ? String(quantity).trim() : undefined,
+            }];
+          }
+
+          if (extractedItems.length > 0) {
+            return {
+              type: "shopping",
+              items: extractedItems,
+              confidence: "high",
+              rawText: transcript,
+            };
+          }
         }
 
         if (data.type === "medicine" && data.name) {
@@ -727,12 +783,12 @@ export default function VoiceInputModal() {
                 {pendingResult.type === "shopping" && (
                   <div className="bg-white p-3 rounded-xl border border-orange-200 space-y-1.5">
                     <span className="text-xs font-black text-amber-700">🛒 Shopping List:</span>
-                    {pendingResult.items.map((it, idx) => (
+                    {pendingResult.items.map((it: any, idx: number) => (
                       <div
                         key={idx}
                         className="flex items-center justify-between text-sm font-black text-stone-900 bg-stone-50 px-2.5 py-1 rounded-lg border border-stone-200"
                       >
-                        <span>• {it.itemName}</span>
+                        <span>• {it.itemName || it.name || "Item"}</span>
                         {it.quantity && (
                           <span className="text-[11px] font-bold text-stone-600 bg-stone-200 px-1.5 py-0.5 rounded">
                             {it.quantity}

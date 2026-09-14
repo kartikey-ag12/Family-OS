@@ -450,12 +450,16 @@ export async function getTodaysStatusForFamily(
 // ─── Shopping List ────────────────────────────────────────────
 
 export async function addShoppingItem(
-  item: Omit<ShoppingItem, "id" | "addedAt">
+  item: Omit<ShoppingItem, "id" | "addedAt"> & { name?: string }
 ): Promise<string> {
+  const name = (item.itemName || item.name || "").trim();
+  if (!name) {
+    throw new Error("addShoppingItem: itemName is required");
+  }
   const ref = doc(collection(db, "shoppingItems"));
   await setDoc(ref, {
     familyId: item.familyId,
-    itemName: item.itemName.trim(),
+    itemName: name,
     quantity: item.quantity?.trim() || null,
     addedBy: item.addedBy,
     addedByUid: item.addedByUid,
