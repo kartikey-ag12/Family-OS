@@ -34,6 +34,46 @@ export type ParsedVoiceResult =
       suggestedName?: string;
     };
 
+// ─── Voice Confirmation & Control Helpers ─────────────────────
+
+export function isVoiceStopPhrase(text: string): boolean {
+  const t = text.toLowerCase().trim();
+  return (
+    /\b(band\s*karo|band\s*kar\s*do|stop|ruk\s*jao|khatam|ho\s*gaya|pura\s*ho\s*gaya|close|exit|done)\b/i.test(t) ||
+    /(बंद\s*करो|रुक\s*जाओ|बस|स्टॉप|हो\s*गया|खत्म|बंद)/.test(t)
+  );
+}
+
+export function isVoiceConfirmationYes(text: string): boolean {
+  const t = text.toLowerCase().trim();
+  return (
+    /\b(haan|ha|han|haa|yes|yeah|yep|ok|okay|theek\s*hai|sahi\s*hai|kardo|kar\s*do|add\s*karo|save\s*karo|jod\s*do|daal\s*do|ji\s*haan|sure|correct)\b/i.test(t) ||
+    /(हां|हाँ|सही\s*है|हाँ\s*करो|ठीक\s*है|यस|ओके|जोड़ो|डाल\s*दो|कर\s*दो|सेव)/.test(t)
+  );
+}
+
+export function isVoiceConfirmationNo(text: string): boolean {
+  const t = text.toLowerCase().trim();
+  return (
+    /\b(cancel|nahi|nahin|na|no|nope|mat\s*karo|cancel\s*karo|hatao|nahi\s*karna|rehne\s*do|reject)\b/i.test(t) ||
+    /(नहीं|ना|कैंसिल|रहने\s*दो|मत\s*करो|हटाओ)/.test(t)
+  );
+}
+
+export function getVoiceConfirmationPrompt(result: ParsedVoiceResult): string {
+  if (result.type === "expense") {
+    return `${result.category} ₹${result.amount} add karu? 'Haan' ya 'Cancel' boliye`;
+  }
+  if (result.type === "shopping") {
+    const names = result.items.map((i) => i.itemName + (i.quantity ? ` (${i.quantity})` : "")).join(", ");
+    return `${names} shopping list me add karu? 'Haan' ya 'Cancel' boliye`;
+  }
+  if (result.type === "medicine") {
+    return `${result.name} dawai (${result.time}) reminder add karu? 'Haan' ya 'Cancel' boliye`;
+  }
+  return "Kya karna hai? 'Shopping', 'Expense' ya 'Cancel' boliye";
+}
+
 // ─── 1. Number & Devanagari Translation ───────────────────────
 
 const DEVANAGARI_DIGITS: Record<string, string> = {
