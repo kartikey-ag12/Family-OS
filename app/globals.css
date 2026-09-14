@@ -1,26 +1,37 @@
 /* ============================================================
-   app/globals.css — Global styles + Tailwind base
+   app/globals.css — Family OS Design System (Warm Paper & Deep Teal)
    ============================================================ */
 @import "tailwindcss";
 
 @theme {
-  --color-family-primary: #f97316;
-  --color-family-primary-dark: #ea6c0a;
-  --color-family-success: #16a34a;
-  --color-family-warning: #d97706;
-  --color-family-danger: #dc2626;
-  --color-family-bg: #fff7ed;
-  --color-family-card: #ffffff;
-  --color-family-text: #1c1917;
-  --color-family-muted: #78716c;
-  --color-family-border: #e7e5e4;
+  --color-family-bg: #FAF7F2;
+  --color-family-card: #FFFFFF;
+  --color-family-primary: #1F4B4C;
+  --color-family-primary-dark: #163738;
+  --color-family-primary-light: #EBF3F3;
+  --color-family-accent: #E8A33D;
+  --color-family-accent-dark: #D4902B;
+  --color-family-accent-light: #FDF5E8;
+  --color-family-success: #4A7C59;
+  --color-family-success-dark: #346141;
+  --color-family-success-light: #E8F0EA;
+  --color-family-warning: #C27D26;
+  --color-family-warning-dark: #8A5415;
+  --color-family-warning-light: #FDF4E6;
+  --color-family-danger: #B84A39;
+  --color-family-danger-dark: #8F3324;
+  --color-family-danger-light: #FBECE9;
+  --color-family-text: #2A2622;
+  --color-family-muted: #6E675F;
+  --color-family-border: #E5DFD5;
+  --color-family-border-subtle: #EFEAE1;
 
-  --font-family-sans: "Noto Sans", system-ui, sans-serif;
-  --font-size-base: 18px;
+  --font-family-sans: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
+  --font-size-base: 16px;
 }
 
 html {
-  font-size: 18px;
+  font-size: 16px;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -30,84 +41,154 @@ body {
   color: var(--color-family-text);
   min-height: 100dvh;
   overscroll-behavior: none;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
-/* Safe area insets for notched Android phones */
+/* Safe area insets for notched phones */
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Large tap targets for elderly users */
+/* Primary Button (Elderly friendly large tap targets) */
 .btn-primary {
-  min-height: 56px;
+  min-height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
-  font-size: 1.2rem;
+  border-radius: 12px;
+  font-size: 1.05rem;
   font-weight: 700;
   width: 100%;
-  transition: transform 0.1s, opacity 0.1s;
+  background-color: var(--color-family-primary);
+  color: #ffffff;
+  transition: transform 0.12s ease, opacity 0.12s ease, background-color 0.15s ease;
   cursor: pointer;
+  border: none;
 }
 
 .btn-primary:active {
-  transform: scale(0.97);
-  opacity: 0.9;
+  transform: scale(0.98);
+  opacity: 0.92;
+}
+
+.btn-accent {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  width: 100%;
+  background-color: var(--color-family-accent);
+  color: #ffffff;
+  transition: transform 0.12s ease, opacity 0.12s ease, background-color 0.15s ease;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-accent:active {
+  transform: scale(0.98);
+  opacity: 0.92;
+}
+
+.btn-secondary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  background-color: #ffffff;
+  color: var(--color-family-text);
+  border: 1px solid var(--color-family-border);
+  transition: background-color 0.15s ease, transform 0.12s ease;
+  cursor: pointer;
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+  background-color: #F7F3EC;
 }
 
 /* Input style for elderly-friendly forms */
 .input-field {
   min-height: 52px;
   border-radius: 12px;
-  border: 2px solid var(--color-family-border);
+  border: 1.5px solid var(--color-family-border);
   padding: 12px 16px;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  font-weight: 500;
   width: 100%;
-  background: white;
+  background: #ffffff;
   color: var(--color-family-text);
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .input-field:focus {
   outline: none;
   border-color: var(--color-family-primary);
+  box-shadow: 0 0 0 3px rgba(31, 75, 76, 0.12);
 }
 
-/* Card component */
-.card {
+.input-field::placeholder {
+  color: #9E978E;
+}
+
+/* Primary Hero Card (Largest radius, subtle border) */
+.card-hero {
   background: var(--color-family-card);
-  border-radius: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  border: 1px solid var(--color-family-border);
   padding: 20px;
 }
 
-/* Status badge */
+/* Standard Content Card */
+.card {
+  background: var(--color-family-card);
+  border-radius: 16px;
+  border: 1px solid var(--color-family-border);
+  padding: 18px;
+}
+
+/* Compact Sub-card */
+.card-sm {
+  background: var(--color-family-card);
+  border-radius: 12px;
+  border: 1px solid var(--color-family-border);
+  padding: 14px;
+}
+
+/* Status Badges */
 .badge-taken {
-  background: #dcfce7;
-  color: #15803d;
-  border-radius: 100px;
-  padding: 4px 12px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  background: var(--color-family-success-light);
+  color: var(--color-family-success-dark);
+  border: 1px solid #C4DCCB;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
 .badge-skipped {
-  background: #fef3c7;
-  color: #92400e;
-  border-radius: 100px;
-  padding: 4px 12px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  background: var(--color-family-warning-light);
+  color: var(--color-family-warning-dark);
+  border: 1px solid #F3DCC0;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
 .badge-pending {
-  background: #f3f4f6;
-  color: #6b7280;
-  border-radius: 100px;
-  padding: 4px 12px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  background: #F3EFEA;
+  color: #554E46;
+  border: 1px solid #E2DBD1;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
 /* Scroll area */

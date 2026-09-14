@@ -8,6 +8,7 @@ export type MedicineStatus = "pending" | "taken" | "skipped";
 export interface FamilyMember {
   uid: string;
   displayName: string;
+  nickname?: string;
   email: string;
   familyId: string;
   fcmToken?: string; // latest token (backwards compatibility)

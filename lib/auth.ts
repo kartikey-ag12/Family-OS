@@ -24,13 +24,16 @@ export async function signUp(
   email: string,
   password: string,
   displayName: string,
-  familyOption: { type: "create"; familyName: string } | { type: "join"; inviteCode: string }
+  familyOption: { type: "create"; familyName: string } | { type: "join"; inviteCode: string },
+  nickname?: string
 ): Promise<User> {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
   const user = cred.user;
 
+  const finalNickname = (nickname || displayName).trim();
+
   // Set display name
-  await updateProfile(user, { displayName });
+  await updateProfile(user, { displayName: finalNickname });
 
   let familyId: string;
 
@@ -44,10 +47,11 @@ export async function signUp(
     familyId = family.id;
   }
 
-  // Create user profile in Firestore
+  // Create user profile in Firestore with nickname
   await createOrUpdateUserProfile(user.uid, {
     uid: user.uid,
-    displayName,
+    displayName: displayName.trim(),
+    nickname: finalNickname,
     email,
     familyId,
     role: familyOption.type === "create" ? "admin" : "member",

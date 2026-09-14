@@ -20,10 +20,10 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#e7e5e4] safe-bottom z-50"
-      style={{ boxShadow: "0 -4px 20px rgba(0,0,0,0.08)" }}
+      className="fixed bottom-0 left-0 right-0 bg-[#FAF7F2]/95 backdrop-blur-md border-t border-[#E5DFD5] safe-bottom z-40"
+      style={{ boxShadow: "0 -2px 12px rgba(42, 38, 34, 0.04)" }}
     >
-      <div className="flex items-stretch">
+      <div className="flex items-stretch max-w-lg mx-auto">
         {tabs.map((tab) => {
           const isActive = pathname === tab.href;
           return (
@@ -31,24 +31,23 @@ export default function BottomNav() {
               key={tab.href}
               id={tab.id}
               href={tab.href}
-              className="flex-1 flex flex-col items-center justify-center py-3 min-h-[64px] transition-colors"
-              style={{ color: isActive ? "#f97316" : "#78716c" }}
+              className={`flex-1 relative flex flex-col items-center justify-center py-2.5 min-h-[60px] transition-colors ${
+                isActive
+                  ? "text-[#1F4B4C] font-bold"
+                  : "text-[#6E675F] hover:text-[#2A2622]"
+              }`}
             >
-              <span className="text-2xl leading-none">{tab.icon}</span>
+              <span className="text-xl leading-none mb-0.5">{tab.icon}</span>
               <span
-                className="text-xs font-semibold mt-1"
+                className="text-[12px] tracking-tight"
                 style={{
-                  fontWeight: isActive ? "800" : "600",
-                  fontSize: "13px",
+                  fontWeight: isActive ? 700 : 500,
                 }}
               >
                 {tab.label}
               </span>
               {isActive && (
-                <div
-                  className="absolute bottom-0 h-1 w-12 rounded-full"
-                  style={{ background: "#f97316" }}
-                />
+                <div className="absolute top-0 h-0.5 w-8 rounded-full bg-[#1F4B4C]" />
               )}
             </Link>
           );

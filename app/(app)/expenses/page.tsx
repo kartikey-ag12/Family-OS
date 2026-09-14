@@ -1,6 +1,6 @@
 // ============================================================
 // app/(app)/expenses/page.tsx — Ghar ka Hisab (Expense Tracker)
-// Elderly-friendly, large tap targets, Indian currency format
+// Elderly-friendly, large tap targets, Indian household palette
 // ============================================================
 "use client";
 
@@ -25,6 +25,22 @@ const CATEGORIES: { label: ExpenseCategory; icon: string; name: string }[] = [
   { label: "Rent/EMI", icon: "🏠", name: "Kiraya / EMI" },
   { label: "Others", icon: "📦", name: "Anya (Others)" },
 ];
+
+const CATEGORY_STYLES: Record<
+  ExpenseCategory,
+  { bg: string; text: string; border: string; activeBg: string }
+> = {
+  Sabzi: { bg: "bg-[#E8F4EC]", text: "text-[#2D5A38]", border: "border-[#CFE8D7]", activeBg: "bg-[#2D5A38]" },
+  Doodh: { bg: "bg-[#EDF5F8]", text: "text-[#1E5266]", border: "border-[#D1E6ED]", activeBg: "bg-[#1E5266]" },
+  Grocery: { bg: "bg-[#FAF4E5]", text: "text-[#6E541C]", border: "border-[#F2E5C5]", activeBg: "bg-[#6E541C]" },
+  Electricity: { bg: "bg-[#FDF4E6]", text: "text-[#7A4E11]", border: "border-[#F8E3C3]", activeBg: "bg-[#7A4E11]" },
+  Recharge: { bg: "bg-[#F1EEF8]", text: "text-[#483B75]", border: "border-[#DED7F0]", activeBg: "bg-[#483B75]" },
+  Petrol: { bg: "bg-[#FAECE8]", text: "text-[#823223]", border: "border-[#F3D3CB]", activeBg: "bg-[#823223]" },
+  Medical: { bg: "bg-[#FAEBEE]", text: "text-[#852C3D]", border: "border-[#F4D1D8]", activeBg: "bg-[#852C3D]" },
+  Repair: { bg: "bg-[#F4EEF7]", text: "text-[#5C326E]", border: "border-[#E5D7EC]", activeBg: "bg-[#5C326E]" },
+  "Rent/EMI": { bg: "bg-[#EEF2F6]", text: "text-[#2B4663]", border: "border-[#D4DFEC]", activeBg: "bg-[#2B4663]" },
+  Others: { bg: "bg-[#F3EFEA]", text: "text-[#554E46]", border: "border-[#E2DBD1]", activeBg: "bg-[#554E46]" },
+};
 
 function formatRupees(amount: number): string {
   return `₹${Math.round(amount || 0).toLocaleString("en-IN")}`;
@@ -168,7 +184,6 @@ export default function ExpensesPage() {
 
     setAdding(true);
     try {
-      // Parse chosen date
       const [y, m, d] = expenseDate.split("-").map(Number);
       const dateObj = new Date(y, m - 1, d);
       const currentTime = new Date();
@@ -178,12 +193,14 @@ export default function ExpensesPage() {
         currentTime.getSeconds()
       );
 
+      const userNickname = profile.nickname || profile.displayName || "Family Member";
+
       await addExpense({
         familyId: profile.familyId,
         amount: numAmount,
         category,
         note: note.trim() || undefined,
-        addedBy: profile.displayName || user.displayName || "Family Member",
+        addedBy: userNickname,
         addedByUid: user.uid,
         date: dateObj,
       });
@@ -218,87 +235,89 @@ export default function ExpensesPage() {
   const displayedList = viewFilter === "today" ? todayExpenses : thisMonthExpenses;
 
   return (
-    <div className="px-4 pt-6 max-w-xl mx-auto pb-10">
-      {/* Header */}
-      <div className="mb-5">
+    <div className="px-4 pt-5 max-w-lg mx-auto pb-24">
+      {/* ─── Header ─── */}
+      <div className="mb-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h1 className="text-3xl font-extrabold text-[#1c1917] flex items-center gap-2">
-            💰 Ghar ka Hisab
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1F4B4C] flex items-center gap-2">
+            <span>💰</span>
+            <span>Ghar ka Hisab</span>
           </h1>
           {todayTotal > 0 && (
-            <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-sm font-extrabold px-3 py-1 rounded-full shadow-xs shrink-0">
+            <span className="bg-[#EBF3F3] text-[#1F4B4C] border border-[#CFE0E0] text-xs sm:text-sm font-bold px-3 py-1 rounded-full shrink-0">
               Aaj: {formatRupees(todayTotal)}
             </span>
           )}
         </div>
         {family && (
-          <p className="text-[#ea580c] font-bold text-sm mt-1">
+          <p className="text-[#6E675F] font-semibold text-xs sm:text-sm mt-0.5">
             👨‍👩‍👧‍👦 {family.name}
           </p>
         )}
       </div>
 
       {/* ─── 1. This Month Summary Card ────────────────────── */}
-      <div className="card mb-6 bg-white border-2 border-orange-200/90 shadow-md p-5 rounded-2xl">
+      <div className="card mb-5 bg-white border border-[#E5DFD5] p-5 rounded-2xl shadow-xs">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-xs sm:text-sm font-bold text-stone-700 uppercase tracking-wider flex items-center gap-1.5 flex-wrap">
+            <p className="text-xs sm:text-sm font-bold text-[#6E675F] flex items-center gap-1.5 flex-wrap">
               <span>📅</span>
-              <span>Is Mahine ka Kharcha</span>
-              <span className="text-stone-500 font-semibold normal-case">
+              <span>Is mahine ka kharcha</span>
+              <span className="text-[#9E978E] font-medium">
                 ({now.toLocaleString("hi-IN", { month: "long" })})
               </span>
             </p>
-            <h2 className="text-3xl sm:text-4xl font-black text-[#1c1917] mt-1.5 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#2A2622] mt-1 tracking-tight">
               {formatRupees(thisMonthTotal)}
             </h2>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-orange-100 border border-orange-200 text-orange-700 flex items-center justify-center text-2xl shrink-0 shadow-xs">
-            💵
+          <div className="w-12 h-12 rounded-xl bg-[#EBF3F3] border border-[#CFE0E0] text-[#1F4B4C] flex items-center justify-center text-2xl shrink-0">
+            ₹
           </div>
         </div>
 
         {/* Month Comparison */}
         {lastMonthTotal > 0 && (
-          <div className="mt-3.5 pt-3.5 border-t border-stone-100 text-xs font-bold flex items-center gap-2 flex-wrap text-stone-700">
+          <div className="mt-3.5 pt-3.5 border-t border-[#E5DFD5] text-xs font-semibold flex items-center gap-2 flex-wrap text-[#423C36]">
             {diffFromLastMonth > 0 ? (
               <>
-                <span className="bg-red-100 text-red-800 border border-red-200 px-2 py-0.5 rounded-md text-[11px] font-extrabold shrink-0">
+                <span className="bg-[#FBECE9] text-[#8F3324] border border-[#F3D3CB] px-2 py-0.5 rounded-md text-[11px] font-bold shrink-0">
                   ▲ Zyada
                 </span>
                 <span>Pichle mahine se {formatRupees(diffFromLastMonth)} zyada kharcha hua</span>
               </>
             ) : diffFromLastMonth < 0 ? (
               <>
-                <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-extrabold shrink-0">
+                <span className="bg-[#E8F0EA] text-[#346141] border border-[#C4DCCB] px-2 py-0.5 rounded-md text-[11px] font-bold shrink-0">
                   ▼ Kam
                 </span>
                 <span>Pichle mahine se {formatRupees(Math.abs(diffFromLastMonth))} kam kharcha hua</span>
               </>
             ) : (
-              <span className="text-stone-600">Pichle mahine ke barabar kharcha hua ({formatRupees(lastMonthTotal)})</span>
+              <span className="text-[#6E675F]">Pichle mahine ke barabar kharcha hua ({formatRupees(lastMonthTotal)})</span>
             )}
           </div>
         )}
 
-        {/* Category Breakdown (Simple Grid) */}
+        {/* Category Breakdown (Tinted mini chips) */}
         {categoryBreakdown.length > 0 && (
-          <div className="mt-4 pt-3.5 border-t border-stone-100">
-            <p className="text-xs font-extrabold text-stone-600 uppercase tracking-wider mb-2.5">
+          <div className="mt-4 pt-3.5 border-t border-[#E5DFD5]">
+            <p className="text-xs font-bold text-[#6E675F] mb-2">
               Kaha kitna kharch hua:
             </p>
             <div className="grid grid-cols-2 gap-2 text-xs">
               {categoryBreakdown.map(([cat, amt]) => {
                 const catInfo = CATEGORIES.find((c) => c.label === cat);
+                const style = CATEGORY_STYLES[cat] || CATEGORY_STYLES.Others;
                 return (
                   <div
                     key={cat}
-                    className="bg-stone-50 border border-stone-200 px-3 py-2 rounded-xl flex items-center justify-between text-stone-900 shadow-2xs"
+                    className={`${style.bg} ${style.border} border px-2.5 py-1.5 rounded-lg flex items-center justify-between shadow-2xs`}
                   >
-                    <span className="truncate font-bold text-stone-700">
+                    <span className={`truncate font-semibold ${style.text}`}>
                       {catInfo?.icon} {cat}
                     </span>
-                    <span className="font-black text-stone-950 ml-1 shrink-0">{formatRupees(amt)}</span>
+                    <span className="font-extrabold text-[#2A2622] ml-1 shrink-0">{formatRupees(amt)}</span>
                   </div>
                 );
               })}
@@ -308,36 +327,22 @@ export default function ExpensesPage() {
       </div>
 
       {/* ─── 2. Quick Add Expense Card ─────────────────────── */}
-      <div className="card mb-6 border-2 border-stone-200 shadow-md rounded-2xl">
-        <h3 className="text-lg font-extrabold text-[#1c1917] mb-3.5 flex items-center gap-2">
-          <span>➕</span> Naya Kharcha Jodein
+      <div className="card mb-5 bg-white border border-[#E5DFD5] p-5 rounded-2xl shadow-xs">
+        <h3 className="text-lg font-bold text-[#2A2622] mb-3.5 flex items-center gap-2">
+          <span>➕</span>
+          <span>Naya kharcha jodein</span>
         </h3>
 
         <form onSubmit={handleAddExpense} className="space-y-4">
-          {/* Amount input — Large keypad friendly */}
+          {/* Amount input */}
           <div>
-            <label htmlFor="expense-amount" className="block text-xs font-bold text-stone-700 uppercase mb-1">
+            <label htmlFor="expense-amount" className="block text-xs font-bold text-[#6E675F] mb-1">
               Rupaye (Amount) *
             </label>
             <div className="relative flex items-center">
-              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none text-stone-700 z-10">
-                <svg
-                  className="w-6 h-6 text-stone-700 shrink-0"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M6 3h12" />
-                  <path d="M6 8h12" />
-                  <path d="M6 13l8.5 8" />
-                  <path d="M6 13h3" />
-                  <path d="M9 13a4 4 0 0 0 0-8" />
-                </svg>
-              </div>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-[#6E675F] pointer-events-none select-none z-10">
+                ₹
+              </span>
               <input
                 id="expense-amount"
                 type="number"
@@ -348,188 +353,168 @@ export default function ExpensesPage() {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0"
-                className="input-field font-extrabold text-2xl text-[#1c1917] w-full tracking-wide"
-                style={{ minHeight: "56px", paddingLeft: "3.25rem" }}
+                className="input-field pl-9 text-2xl font-extrabold text-[#2A2622]"
+                style={{ height: "56px" }}
               />
             </div>
           </div>
 
-          {/* Category Picker — Large Tappable Chips */}
+          {/* Category Picker (Individual Soft Tinted Chips) */}
           <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase mb-1.5">
-              Category Chunein *
+            <label className="block text-xs font-bold text-[#6E675F] mb-2">
+              Category chunein *
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {CATEGORIES.map((cat) => {
                 const isSelected = category === cat.label;
+                const style = CATEGORY_STYLES[cat.label] || CATEGORY_STYLES.Others;
                 return (
                   <button
                     key={cat.label}
                     type="button"
                     onClick={() => setCategory(cat.label)}
-                    className={`py-2.5 px-3 rounded-xl font-bold text-sm flex items-center gap-2 transition cursor-pointer border-2 text-left ${
+                    className={`py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
                       isSelected
-                        ? "border-[#ea580c] bg-orange-50 text-[#c2410c] shadow-xs"
-                        : "border-stone-200 bg-white text-stone-800 hover:bg-stone-50"
+                        ? "bg-[#1F4B4C] text-white border-[#1F4B4C] shadow-xs"
+                        : `${style.bg} ${style.text} ${style.border} hover:opacity-90`
                     }`}
                   >
-                    <span className="text-xl shrink-0">{cat.icon}</span>
-                    <span className="truncate">{cat.label}</span>
+                    <span className="text-base">{cat.icon}</span>
+                    <span className="truncate">{cat.name}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Note input (Optional) */}
-          <div>
-            <label htmlFor="expense-note" className="block text-xs font-bold text-stone-700 uppercase mb-1">
-              Kaha kharch hua? (Optional description)
-            </label>
-            <input
-              id="expense-note"
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Jaise Mother Dairy, Bijli bill, Doctor fees..."
-              className="input-field text-base text-stone-900 font-medium"
-              style={{ minHeight: "48px" }}
-            />
-          </div>
+          {/* Note & Date Fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="expense-note" className="block text-xs font-bold text-[#6E675F] mb-1">
+                Kiska kharcha (Note / Description)
+              </label>
+              <input
+                id="expense-note"
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="jaise: Mother Dairy doodh"
+                className="input-field text-sm"
+              />
+            </div>
 
-          {/* Date Picker (Defaults to today) */}
-          <div>
-            <label htmlFor="expense-date" className="block text-xs font-bold text-stone-700 uppercase mb-1">
-              Taarikh (Date)
-            </label>
-            <input
-              id="expense-date"
-              type="date"
-              value={expenseDate}
-              onChange={(e) => setExpenseDate(e.target.value)}
-              className="input-field text-base font-semibold text-stone-900"
-              style={{ minHeight: "48px" }}
-            />
+            <div>
+              <label htmlFor="expense-date" className="block text-xs font-bold text-[#6E675F] mb-1">
+                Tarikh (Date)
+              </label>
+              <input
+                id="expense-date"
+                type="date"
+                value={expenseDate}
+                onChange={(e) => setExpenseDate(e.target.value)}
+                className="input-field text-sm font-semibold"
+              />
+            </div>
           </div>
 
           {/* Submit Button */}
           <button
-            id="expense-submit-btn"
             type="submit"
             disabled={adding || !amount || parseFloat(amount) <= 0}
-            className="btn-primary w-full text-white font-extrabold text-lg shadow-md disabled:opacity-50 transition cursor-pointer"
-            style={{
-              background: "#ea580c",
-              minHeight: "54px",
-            }}
+            className="btn-primary min-h-[52px] bg-[#1F4B4C] hover:bg-[#163738] text-white font-bold text-base shadow-xs disabled:opacity-50"
           >
-            {adding ? "⏳ Jod rahe hain..." : "➕ Kharcha Jodo"}
+            {adding ? "⏳ Jod rahe hain..." : "💰 Kharcha Jodein →"}
           </button>
         </form>
       </div>
 
-      {/* ─── 3. Expenses List & Segment Tabs ────────────────── */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-          <h3 className="text-xl font-extrabold text-[#1c1917]">
-            📋 Kharche ki List
-          </h3>
-
-          {/* Toggle Tab */}
-          <div className="flex bg-stone-200/90 p-1 rounded-xl">
-            <button
-              type="button"
-              onClick={() => setViewFilter("today")}
-              className={`px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition cursor-pointer ${
-                viewFilter === "today"
-                  ? "bg-white text-stone-950 shadow-xs"
-                  : "text-stone-600 hover:text-stone-950"
-              }`}
-            >
-              Aaj ({todayExpenses.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewFilter("month")}
-              className={`px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition cursor-pointer ${
-                viewFilter === "month"
-                  ? "bg-white text-stone-950 shadow-xs"
-                  : "text-stone-600 hover:text-stone-950"
-              }`}
-            >
-              Is Mahine ({thisMonthExpenses.length})
-            </button>
-          </div>
+      {/* ─── 3. Expenses List Section ──────────────────────── */}
+      <div className="mb-4">
+        {/* Toggle view: Today vs Month */}
+        <div className="flex items-center justify-between gap-2 mb-3 bg-[#EFEAE1] p-1 rounded-xl border border-[#E5DFD5]">
+          <button
+            type="button"
+            onClick={() => setViewFilter("today")}
+            className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-colors cursor-pointer ${
+              viewFilter === "today"
+                ? "bg-white text-[#1F4B4C] shadow-xs"
+                : "text-[#6E675F] hover:text-[#2A2622]"
+            }`}
+          >
+            Aaj ke Kharche ({todayExpenses.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewFilter("month")}
+            className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-colors cursor-pointer ${
+              viewFilter === "month"
+                ? "bg-white text-[#1F4B4C] shadow-xs"
+                : "text-[#6E675F] hover:text-[#2A2622]"
+            }`}
+          >
+            Is Mahine ke ({thisMonthExpenses.length})
+          </button>
         </div>
 
-        {/* Loading */}
+        {/* List items */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-5xl mb-3 animate-spin">⏳</div>
-            <p className="text-stone-600 text-base font-semibold">
-              Hisab load ho raha hai...
-            </p>
+            <div className="text-3xl mb-2 animate-spin">⏳</div>
+            <p className="text-[#6E675F] text-sm">Kharche load ho rahe hain...</p>
           </div>
         ) : displayedList.length === 0 ? (
-          /* Empty state */
-          <div className="card text-center py-10 px-4 border-dashed border-2 border-stone-200 bg-white">
-            <div className="text-5xl mb-2">🧾</div>
-            <p className="text-lg font-bold text-stone-800">
-              {viewFilter === "today" ? "Aaj koi kharcha nahi likha!" : "Is mahine koi kharcha nahi!"}
-            </p>
-            <p className="text-sm text-stone-500 font-medium mt-1">
-              Upar diye form se naya kharcha jodein.
+          <div className="bg-white border border-[#E5DFD5] rounded-2xl p-6 text-center">
+            <div className="text-4xl mb-2">🧾</div>
+            <h4 className="text-base font-bold text-[#2A2622] mb-1">
+              {viewFilter === "today" ? "Aaj koi kharcha nahi joda" : "Is mahine koi kharcha nahi"}
+            </h4>
+            <p className="text-xs text-[#6E675F]">
+              Upar diye form se naya kharcha add karein ya voice se bole.
             </p>
           </div>
         ) : (
-          /* Expense Cards */
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {displayedList.map((exp) => {
               const catInfo = CATEGORIES.find((c) => c.label === exp.category);
-              const isDeleting = deletingId === exp.id;
-
+              const style = CATEGORY_STYLES[exp.category] || CATEGORY_STYLES.Others;
               return (
                 <div
                   key={exp.id}
-                  className="card border-l-4 border-l-[#ea580c] p-4 transition-all hover:shadow-md flex items-center justify-between gap-3 bg-white"
+                  className="bg-white border border-[#E5DFD5] rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-2xs hover:border-[#CFE0E0] transition"
                 >
-                  <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <div className="w-12 h-12 rounded-2xl bg-orange-100 border border-orange-200 flex items-center justify-center text-2xl shrink-0 shadow-2xs">
-                      {catInfo?.icon || "💵"}
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className={`w-10 h-10 rounded-lg ${style.bg} ${style.border} border flex items-center justify-center text-xl shrink-0`}>
+                      {catInfo?.icon || "📦"}
                     </div>
-
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        <h4 className="text-lg font-extrabold text-[#1c1917] truncate">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-bold text-[#2A2622] truncate">
                           {exp.category}
-                        </h4>
+                        </span>
                         {exp.note && (
-                          <span className="text-xs text-stone-600 truncate font-semibold">
+                          <span className="text-xs font-medium text-[#6E675F] truncate">
                             • {exp.note}
                           </span>
                         )}
                       </div>
-
-                      <p className="text-xs text-stone-500 font-bold mt-0.5">
-                        👤 {exp.addedBy} • {formatExpenseDate(exp.date)}
+                      <p className="text-[11px] font-semibold text-[#9E978E] mt-0.5">
+                        {formatExpenseDate(exp.date)} • {exp.addedBy}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xl font-black text-stone-950">
+                    <span className="text-base sm:text-lg font-extrabold text-[#2A2622]">
                       {formatRupees(exp.amount)}
                     </span>
-
-                    {/* Delete button */}
                     <button
                       type="button"
+                      disabled={deletingId === exp.id}
                       onClick={() => handleDelete(exp.id, exp.category, exp.amount)}
-                      disabled={isDeleting}
-                      className="text-stone-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-xl text-base transition cursor-pointer"
-                      title="Hatao (Delete)"
+                      title="Hatayein (Delete)"
+                      className="p-1.5 text-[#9E978E] hover:text-[#B84A39] rounded-md transition cursor-pointer text-xs"
                     >
-                      {isDeleting ? "⏳" : "🗑️"}
+                      {deletingId === exp.id ? "⏳" : "🗑️"}
                     </button>
                   </div>
                 </div>

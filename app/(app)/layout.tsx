@@ -21,10 +21,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-dvh bg-[#fff7ed]">
+      <div className="flex items-center justify-center min-h-dvh bg-[#FAF7F2]">
         <div className="text-center">
-          <div className="text-5xl mb-3 animate-pulse">💊</div>
-          <p className="text-[#78716c] text-lg">Khul raha hai...</p>
+          <div className="text-5xl mb-3 animate-pulse">🏠</div>
+          <p className="text-[#6E675F] text-base font-semibold">Khul raha hai...</p>
         </div>
       </div>
     );
@@ -33,7 +33,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   return (
-    <div className="flex flex-col min-h-dvh bg-[#fff7ed]">
+    <div className="flex flex-col min-h-dvh bg-[#FAF7F2]">
       {/* Main content area — scrollable, above bottom nav */}
       <main className="flex-1 overflow-y-auto pb-24">
         {children}

@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f97316",
+  themeColor: "#1F4B4C",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -47,12 +47,12 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body>
+      <body className="bg-[#FAF7F2] text-[#2A2622] antialiased selection:bg-[#E8A33D]/20">
         <AuthProvider>
           <ServiceWorkerRegistrar />
           {children}

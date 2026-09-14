@@ -37,22 +37,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-[#fff7ed] px-5">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-[#FAF7F2] px-5 py-8">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-3">🏠</div>
-          <h1 className="text-4xl font-extrabold text-[#1c1917]">Family OS</h1>
-          <p className="text-[#78716c] text-lg mt-2">Apne ghar ka app</p>
+        <div className="text-center mb-6">
+          <div className="text-5xl mb-2">🏠</div>
+          <h1 className="text-3xl font-extrabold text-[#1F4B4C]">Family OS</h1>
+          <p className="text-[#6E675F] text-sm mt-1">Apne ghar aur parivaar ka app</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-3xl shadow-lg p-7">
-          <h2 className="text-2xl font-bold text-[#1c1917] mb-6">Login Karein</h2>
+        <div className="bg-white border border-[#E5DFD5] rounded-2xl shadow-xs p-6">
+          <h2 className="text-xl font-bold text-[#2A2622] mb-4">Login Karein</h2>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-3.5">
             <div>
-              <label className="block text-[#1c1917] font-semibold mb-2 text-lg">
+              <label htmlFor="login-email" className="block text-xs font-bold text-[#6E675F] mb-1">
                 Email
               </label>
               <input
@@ -63,12 +63,12 @@ export default function LoginPage() {
                 placeholder="aapka@email.com"
                 required
                 autoComplete="email"
-                className="input-field"
+                className="input-field text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-[#1c1917] font-semibold mb-2 text-lg">
+              <label htmlFor="login-password" className="block text-xs font-bold text-[#6E675F] mb-1">
                 Password
               </label>
               <input
@@ -79,12 +79,12 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
-                className="input-field"
+                className="input-field text-sm"
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-base font-medium">
+              <div className="bg-[#FBECE9] border border-[#F3D3CB] rounded-xl p-3 text-[#8F3324] text-xs font-bold">
                 ⚠️ {error}
               </div>
             )}
@@ -93,22 +93,18 @@ export default function LoginPage() {
               id="login-submit"
               type="submit"
               disabled={loading}
-              className="btn-primary mt-2"
-              style={{
-                background: loading ? "#e7e5e4" : "#f97316",
-                color: loading ? "#78716c" : "white",
-              }}
+              className="btn-primary min-h-[48px] bg-[#1F4B4C] hover:bg-[#163738] text-white font-bold text-base shadow-xs mt-2 disabled:opacity-50"
             >
               {loading ? "⏳ Login ho raha hai..." : "Login Karein →"}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-[#78716c] text-lg mt-6">
-          Naya account?{" "}
+        <p className="text-center text-[#6E675F] text-sm mt-5">
+          Naya account banana hai?{" "}
           <Link
             href="/signup"
-            className="text-[#f97316] font-bold underline-offset-2 underline"
+            className="text-[#1F4B4C] font-bold underline-offset-2 underline hover:text-[#163738]"
           >
             Sign Up Karein
           </Link>

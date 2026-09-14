@@ -1,6 +1,6 @@
 // ============================================================
 // components/MedicineCard.tsx — Individual medicine card
-// Large tap targets, Hinglish labels, status-aware display
+// Large tap targets, clean typography, status-aware display
 // ============================================================
 "use client";
 
@@ -43,7 +43,8 @@ export default function MedicineCard({ medicine, statusRecord }: MedicineCardPro
     try {
       const today = todayDateString();
       const sid = statusDocId(today, medicine.id);
-      await markMedicineStatus(sid, action, user.uid, profile.displayName);
+      const userNickname = profile.nickname || profile.displayName || "Family Member";
+      await markMedicineStatus(sid, action, user.uid, userNickname);
     } catch (err) {
       console.error("Error marking medicine:", err);
     } finally {
@@ -53,95 +54,87 @@ export default function MedicineCard({ medicine, statusRecord }: MedicineCardPro
 
   return (
     <div
-      className="card mb-4 border-l-4 transition-all"
-      style={{
-        borderLeftColor:
-          status === "taken"
-            ? "#16a34a"
-            : status === "skipped"
-            ? "#d97706"
-            : "#f97316",
-        opacity: isMarked ? 0.85 : 1,
-      }}
+      className={`card mb-3.5 border-l-4 transition-all duration-150 ${
+        status === "taken"
+          ? "bg-[#F4F9F5] border-l-[#4A7C59]"
+          : status === "skipped"
+          ? "bg-[#FCF9F3] border-l-[#C27D26]"
+          : "bg-white border-l-[#1F4B4C]"
+      }`}
     >
       {/* Header row: name + time */}
-      <div className="flex items-start justify-between gap-3 mb-3">
+      <div className="flex items-start justify-between gap-3 mb-2.5">
         <div className="flex-1">
-          <h3 className="text-2xl font-extrabold text-[#1c1917] leading-tight">
+          <h3 className="text-xl sm:text-2xl font-bold text-[#2A2622] leading-snug">
             {medicine.name}
           </h3>
-          <p className="text-[#78716c] font-semibold text-lg mt-0.5">
-            🕐 {formatTime(medicine.time)}
+          <p className="text-[#6E675F] font-semibold text-base mt-0.5 flex items-center gap-1.5">
+            <span>🕐</span>
+            <span>{formatTime(medicine.time)}</span>
           </p>
         </div>
 
         {/* Status badge */}
         {isMarked && (
-          <div>
+          <div className="shrink-0">
             {status === "taken" ? (
-              <span className="badge-taken text-base">✓ Le li</span>
+              <span className="badge-taken flex items-center gap-1 text-sm sm:text-base">
+                <span>✓</span> Le li
+              </span>
             ) : (
-              <span className="badge-skipped text-base">✗ Chhod di</span>
+              <span className="badge-skipped flex items-center gap-1 text-sm sm:text-base">
+                <span>✗</span> Chhod di
+              </span>
             )}
           </div>
         )}
       </div>
 
       {/* Tags row */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-3.5">
         <span
-          className="px-3 py-1 rounded-full text-sm font-semibold"
+          className="px-2.5 py-1 rounded-md text-xs sm:text-sm font-semibold border"
           style={{
-            background: medicine.takenAfterFood ? "#fef3c7" : "#dbeafe",
-            color: medicine.takenAfterFood ? "#92400e" : "#1e40af",
+            background: medicine.takenAfterFood ? "#FDF4E6" : "#EBF3F3",
+            color: medicine.takenAfterFood ? "#8A5415" : "#1F4B4C",
+            borderColor: medicine.takenAfterFood ? "#F3DCC0" : "#CFE0E0",
           }}
         >
           {medicine.takenAfterFood ? "🍽️ Khane ke baad" : "🌅 Khane se pehle"}
         </span>
 
-        <span className="px-3 py-1 rounded-full text-sm font-semibold bg-[#f3f4f6] text-[#374151]">
+        <span className="px-2.5 py-1 rounded-md text-xs sm:text-sm font-semibold bg-[#FAF7F2] text-[#423C36] border border-[#E5DFD5]">
           👤 {medicine.assignedTo}
         </span>
       </div>
 
       {/* Action buttons — only show if pending */}
       {!isMarked && (
-        <div className="flex gap-3">
+        <div className="flex gap-2.5 pt-1">
           <button
             id={`take-${medicine.id}`}
             onClick={() => handleMark("taken")}
             disabled={!!loading}
-            className="btn-primary flex-1"
-            style={{
-              background: loading === "taken" ? "#e7e5e4" : "#16a34a",
-              color: loading === "taken" ? "#78716c" : "white",
-              fontSize: "1.25rem",
-            }}
+            className="btn-primary flex-1 min-h-[48px] text-base sm:text-lg bg-[#4A7C59] hover:bg-[#3E6A4B] text-white font-bold"
           >
-            {loading === "taken" ? "⏳..." : "✅ Le li"}
+            {loading === "taken" ? "⏳..." : "✓ Le li"}
           </button>
 
           <button
             id={`skip-${medicine.id}`}
             onClick={() => handleMark("skipped")}
             disabled={!!loading}
-            className="btn-primary flex-1"
-            style={{
-              background: loading === "skipped" ? "#e7e5e4" : "#d97706",
-              color: loading === "skipped" ? "#78716c" : "white",
-              fontSize: "1.1rem",
-            }}
+            className="btn-secondary flex-1 min-h-[48px] text-sm sm:text-base font-semibold text-[#6E675F] bg-[#FAF7F2] hover:bg-[#F3EFEA]"
           >
-            {loading === "skipped" ? "⏳..." : "⏭️ Chhod di"}
+            {loading === "skipped" ? "⏳..." : "Chhod di"}
           </button>
         </div>
       )}
 
       {/* Show who marked it and when */}
       {isMarked && statusRecord?.markedAt && (
-        <p className="text-[#78716c] text-base mt-2">
-          {statusRecord.markedByName ?? "Kisi ne"} ne{" "}
-          {status === "taken" ? "li" : "chhhodi"} —{" "}
+        <p className="text-[#6E675F] text-xs sm:text-sm mt-2 border-t border-[#E5DFD5]/60 pt-2">
+          {statusRecord.markedByName ?? "Kisi"} ne {status === "taken" ? "li" : "chhodi"} —{" "}
           {formatTimestamp(statusRecord.markedAt)}
         </p>
       )}

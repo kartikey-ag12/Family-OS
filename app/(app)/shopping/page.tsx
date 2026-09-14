@@ -86,11 +86,12 @@ export default function ShoppingPage() {
 
     setAdding(true);
     try {
+      const userNickname = profile.nickname || profile.displayName || "Family Member";
       await addShoppingItem({
         familyId: profile.familyId,
         itemName: trimmedName,
         quantity: quantity.trim() || undefined,
-        addedBy: profile.displayName || user.displayName || "Family Member",
+        addedBy: userNickname,
         addedByUid: user.uid,
         isBought: false,
       });
@@ -108,11 +109,12 @@ export default function ShoppingPage() {
     if (!user || !profile || actionLoadingId) return;
     setActionLoadingId(item.id);
     try {
+      const userNickname = profile.nickname || profile.displayName || "Family Member";
       await toggleShoppingItemBought(
         item.id,
         !item.isBought,
         user.uid,
-        profile.displayName || user.displayName || "Family Member"
+        userNickname
       );
     } catch (err) {
       console.error("Error toggling shopping item:", err);
@@ -154,262 +156,218 @@ export default function ShoppingPage() {
   }
 
   return (
-    <div className="px-4 pt-6 max-w-xl mx-auto">
-      {/* Header */}
-      <div className="mb-5">
+    <div className="px-4 pt-5 max-w-lg mx-auto pb-24">
+      {/* ─── Header ─── */}
+      <div className="mb-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-extrabold text-[#1c1917] flex items-center gap-2">
-            🛒 Samaan ki List
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1F4B4C] flex items-center gap-2">
+            <span>🛒</span>
+            <span>Shopping List</span>
           </h1>
           {pendingItems.length > 0 && (
-            <span className="bg-[#f97316] text-white text-sm font-extrabold px-3 py-1 rounded-full shadow-sm">
-              {pendingItems.length} baaki
+            <span className="bg-[#FAF4E5] text-[#6E541C] border border-[#F2E5C5] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
+              {pendingItems.length} lana hai
             </span>
           )}
         </div>
         {family && (
-          <p className="text-[#f97316] font-semibold text-base mt-1">
+          <p className="text-[#6E675F] font-semibold text-xs sm:text-sm mt-0.5">
             👨‍👩‍👧‍👦 {family.name}
           </p>
         )}
       </div>
 
-      {/* Quick Add Form Card */}
-      <div className="card mb-6 border-2 border-orange-200 bg-white/95 shadow-md">
-        <h2 className="text-lg font-bold text-[#1c1917] mb-3 flex items-center gap-1.5">
-          <span>➕</span> Naya Samaan Jodein
-        </h2>
+      {/* ─── Quick Add Form Card ─── */}
+      <div className="card mb-5 bg-white border border-[#E5DFD5] p-5 rounded-2xl shadow-xs">
+        <h3 className="text-base sm:text-lg font-bold text-[#2A2622] mb-3 flex items-center gap-2">
+          <span>➕</span>
+          <span>Samaan Jodein (Quick Add)</span>
+        </h3>
 
         <form onSubmit={handleAddItem} className="space-y-3">
           <div>
+            <label htmlFor="shopping-item-name" className="block text-xs font-bold text-[#6E675F] mb-1">
+              Samaan ka Naam *
+            </label>
             <input
               id="shopping-item-name"
               type="text"
+              required
               value={itemName}
               onChange={(e) => setItemName(e.target.value)}
-              placeholder="Samaan ka naam (jaise Dudh, Cheeni, Sabzi)..."
-              required
-              className="input-field text-lg font-medium"
-              style={{ minHeight: "54px" }}
+              placeholder="jaise: Aata, Tel, Cheeni, Doodh..."
+              className="input-field text-base font-semibold"
             />
           </div>
 
-          <div className="flex gap-2">
+          <div>
+            <label htmlFor="shopping-item-quantity" className="block text-xs font-bold text-[#6E675F] mb-1">
+              Kitna chahiye (Quantity, optional)
+            </label>
             <input
               id="shopping-item-quantity"
               type="text"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              placeholder="Kitna? (optional, jaise 2 kilo, 1 pkt)"
-              className="input-field flex-1 text-base"
-              style={{ minHeight: "52px" }}
+              placeholder="jaise: 2 kilo, 1 packet, 500 gram..."
+              className="input-field text-sm"
             />
-
-            <button
-              id="shopping-add-btn"
-              type="submit"
-              disabled={adding || !itemName.trim()}
-              className="btn-primary flex-none px-6 font-extrabold text-lg text-white disabled:opacity-50"
-              style={{
-                background: "#f97316",
-                minHeight: "52px",
-                width: "auto",
-              }}
-            >
-              {adding ? "⏳..." : "➕ Jodo"}
-            </button>
           </div>
+
+          <button
+            type="submit"
+            disabled={adding || !itemName.trim()}
+            className="btn-primary min-h-[48px] bg-[#1F4B4C] hover:bg-[#163738] text-white font-bold text-base shadow-xs disabled:opacity-50"
+          >
+            {adding ? "⏳ Jod rahe hain..." : "🛒 List Me Jodein →"}
+          </button>
         </form>
       </div>
 
-      {/* Loading State */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-16">
-          <div className="text-5xl mb-4 animate-spin">⏳</div>
-          <p className="text-[#78716c] text-lg font-medium">
-            Samaan ki list load ho rahi hai...
-          </p>
-        </div>
-      ) : items.length === 0 ? (
-        /* Empty State */
-        <div className="card text-center py-12 px-4 mb-6 border-dashed border-2 border-stone-200">
-          <div className="text-6xl mb-3">🧺</div>
-          <h3 className="text-2xl font-bold text-[#1c1917] mb-2">
-            List abhi khaali hai!
+      {/* ─── Pending Items (To Buy) ─── */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h3 className="text-lg font-bold text-[#2A2622] flex items-center gap-2">
+            <span>📋</span>
+            <span>Khareedna Hai ({pendingItems.length})</span>
           </h3>
-          <p className="text-[#78716c] text-base">
-            Ghar ke liye jo bhi samaan chahiye, upar likh kar <b>Jodo</b> button dabayein.
-          </p>
         </div>
-      ) : (
-        <>
-          {/* ─── Pending Items Section ──────────────────────── */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-3 h-3 rounded-full bg-[#f97316]" />
-              <h2 className="text-xl font-bold text-[#1c1917]">
-                Khareedna hai ({pendingItems.length})
-              </h2>
-            </div>
 
-            {pendingItems.length === 0 ? (
-              <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-5 text-center mb-4">
-                <p className="text-3xl mb-1">🎉</p>
-                <p className="text-lg font-bold text-green-800">
-                  Sabhi samaan khareed liya gaya hai!
-                </p>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-10">
+            <div className="text-3xl mb-2 animate-spin">⏳</div>
+            <p className="text-[#6E675F] text-sm">List load ho rahi hai...</p>
+          </div>
+        ) : pendingItems.length === 0 ? (
+          <div className="bg-white border border-[#E5DFD5] rounded-2xl p-6 text-center">
+            <div className="text-4xl mb-2">🎉</div>
+            <h4 className="text-base font-bold text-[#2A2622] mb-1">
+              Koi samaan baaki nahi hai!
+            </h4>
+            <p className="text-xs text-[#6E675F]">
+              Naya samaan jodne ke liye upar form use karein ya bol kar batayein.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {pendingItems.map((item) => (
+              <div
+                key={item.id}
+                className="bg-white border border-[#E5DFD5] rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-2xs hover:border-[#CFE0E0] transition"
+              >
+                {/* Large Checkbox Tap Target */}
+                <button
+                  type="button"
+                  disabled={actionLoadingId === item.id}
+                  onClick={() => handleToggleBought(item)}
+                  className="w-8 h-8 rounded-lg border-2 border-[#1F4B4C] hover:bg-[#EBF3F3] flex items-center justify-center shrink-0 cursor-pointer transition"
+                  title="Mark as Bought"
+                >
+                  {actionLoadingId === item.id ? (
+                    <span className="text-xs animate-spin">⏳</span>
+                  ) : (
+                    <span className="opacity-0 hover:opacity-50 text-[#1F4B4C] text-sm font-bold">✓</span>
+                  )}
+                </button>
+
+                {/* Item Details */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-base font-bold text-[#2A2622] truncate">
+                      {item.itemName}
+                    </span>
+                    {item.quantity && (
+                      <span className="text-xs font-bold text-[#483B75] bg-[#F1EEF8] border border-[#DED7F0] px-2 py-0.5 rounded-md">
+                        {item.quantity}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] font-semibold text-[#9E978E] mt-0.5">
+                    {formatItemTime(item.addedAt)} • {item.addedBy}
+                  </p>
+                </div>
+
+                {/* Delete Button */}
+                <button
+                  type="button"
+                  disabled={actionLoadingId === item.id}
+                  onClick={() => handleDeleteItem(item.id)}
+                  className="p-1.5 text-[#9E978E] hover:text-[#B84A39] rounded-md transition cursor-pointer text-xs shrink-0"
+                  title="Hatayein"
+                >
+                  🗑️
+                </button>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {pendingItems.map((item) => {
-                  const isItemLoading = actionLoadingId === item.id;
-                  return (
-                    <div
-                      key={item.id}
-                      className="card border-l-4 border-l-[#f97316] transition-all hover:shadow-md"
-                    >
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex-1">
-                          <h3 className="text-2xl font-extrabold text-[#1c1917] leading-snug">
-                            {item.itemName}
-                          </h3>
+            ))}
+          </div>
+        )}
+      </div>
 
-                          <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                            {item.quantity && (
-                              <span className="bg-orange-100 text-orange-900 font-bold px-3 py-0.5 rounded-full text-sm">
-                                📦 {item.quantity}
-                              </span>
-                            )}
-                            <span className="text-[#78716c] text-xs font-semibold">
-                              👤 {item.addedBy} • {formatItemTime(item.addedAt)}
-                            </span>
-                          </div>
-                        </div>
+      {/* ─── Bought Items (Purchased) ─── */}
+      {boughtItems.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <button
+              type="button"
+              onClick={() => setShowBought((prev) => !prev)}
+              className="text-sm font-bold text-[#6E675F] hover:text-[#2A2622] flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>{showBought ? "▼" : "▶"}</span>
+              <span>Khareed Liya ({boughtItems.length})</span>
+            </button>
 
-                        {/* Quick Delete Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteItem(item.id)}
-                          disabled={isItemLoading}
-                          className="text-stone-400 hover:text-red-500 p-2 rounded-xl transition cursor-pointer text-lg leading-none"
-                          title="Hatao (Delete)"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-
-                      {/* Large Action Button — Elderly friendly min-height 52px */}
-                      <button
-                        type="button"
-                        id={`bought-btn-${item.id}`}
-                        onClick={() => handleToggleBought(item)}
-                        disabled={isItemLoading}
-                        className="btn-primary w-full text-lg font-bold text-white shadow-sm"
-                        style={{
-                          background: isItemLoading ? "#d6d3d1" : "#16a34a",
-                          minHeight: "52px",
-                        }}
-                      >
-                        {isItemLoading ? "⏳..." : "✅ Le liya ✓"}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <button
+              type="button"
+              disabled={clearing}
+              onClick={handleClearBought}
+              className="text-xs font-bold text-[#B84A39] hover:underline cursor-pointer disabled:opacity-50"
+            >
+              {clearing ? "⏳..." : "Sabhi Saaf Karein"}
+            </button>
           </div>
 
-          {/* ─── Bought Items Section ───────────────────────── */}
-          {boughtItems.length > 0 && (
-            <div className="mt-8 pt-4 border-t-2 border-stone-200">
-              {/* Collapsible Header */}
-              <div className="flex items-center justify-between mb-3">
-                <button
-                  type="button"
-                  onClick={() => setShowBought((prev) => !prev)}
-                  className="flex items-center gap-2 text-left font-bold text-stone-700 hover:text-stone-900 text-lg cursor-pointer"
+          {showBought && (
+            <div className="space-y-2">
+              {boughtItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-[#F4F9F5] border border-[#C4DCCB] rounded-xl p-3 flex items-center justify-between gap-3 opacity-80"
                 >
-                  <span className="w-3 h-3 rounded-full bg-[#16a34a]" />
-                  <span>
-                    Khareed liya ({boughtItems.length})
-                  </span>
-                  <span className="text-stone-500 text-sm font-semibold">
-                    {showBought ? "▲ Chhupayein" : "▼ Dikhayein"}
-                  </span>
-                </button>
+                  {/* Checked button (Undo) */}
+                  <button
+                    type="button"
+                    disabled={actionLoadingId === item.id}
+                    onClick={() => handleToggleBought(item)}
+                    className="w-7 h-7 rounded-lg bg-[#4A7C59] text-white flex items-center justify-center shrink-0 cursor-pointer text-xs font-black shadow-2xs"
+                    title="Undo (Wapas list me dalein)"
+                  >
+                    {actionLoadingId === item.id ? "⏳" : "✓"}
+                  </button>
 
-                {/* Clear Bought Button */}
-                <button
-                  type="button"
-                  id="clear-bought-btn"
-                  onClick={handleClearBought}
-                  disabled={clearing}
-                  className="text-xs font-bold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition cursor-pointer"
-                >
-                  {clearing ? "⏳ Hata rahe hain..." : "🗑️ Clear bought items"}
-                </button>
-              </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-semibold line-through text-[#6E675F] truncate block">
+                      {item.itemName} {item.quantity ? `(${item.quantity})` : ""}
+                    </span>
+                    {item.boughtBy && (
+                      <span className="text-[10px] text-[#4A7C59] font-bold">
+                        ✓ {item.boughtBy} ne khareeda
+                      </span>
+                    )}
+                  </div>
 
-              {showBought && (
-                <div className="space-y-2.5">
-                  {boughtItems.map((item) => {
-                    const isItemLoading = actionLoadingId === item.id;
-                    return (
-                      <div
-                        key={item.id}
-                        className="card bg-stone-50/80 border border-stone-200/80 p-4 transition-all opacity-85 hover:opacity-100"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-green-600 text-lg font-bold">✓</span>
-                              <h4 className="text-xl font-bold text-stone-600 line-through truncate">
-                                {item.itemName}
-                              </h4>
-                              {item.quantity && (
-                                <span className="bg-stone-200 text-stone-700 text-xs font-bold px-2 py-0.5 rounded-full">
-                                  {item.quantity}
-                                </span>
-                              )}
-                            </div>
-
-                            <p className="text-xs text-stone-500 mt-1">
-                              ✅ {item.boughtBy ?? "Kisi ne"} ne liya{" "}
-                              {item.boughtAt && `• ${formatItemTime(item.boughtAt)}`}
-                            </p>
-                          </div>
-
-                          {/* Undo / Wapas Button */}
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleBought(item)}
-                              disabled={isItemLoading}
-                              className="px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-stone-100 border border-stone-300 text-stone-700 shadow-sm cursor-pointer transition"
-                              title="Wapas list mein dalein"
-                            >
-                              {isItemLoading ? "⏳" : "↺ Wapas jodo"}
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteItem(item.id)}
-                              disabled={isItemLoading}
-                              className="text-stone-400 hover:text-red-500 p-2 rounded-xl text-base leading-none transition cursor-pointer"
-                              title="Delete"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <button
+                    type="button"
+                    disabled={actionLoadingId === item.id}
+                    onClick={() => handleDeleteItem(item.id)}
+                    className="p-1 text-[#9E978E] hover:text-[#B84A39] text-xs cursor-pointer"
+                  >
+                    ✕
+                  </button>
                 </div>
-              )}
+              ))}
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );

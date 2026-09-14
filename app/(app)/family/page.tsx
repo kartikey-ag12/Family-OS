@@ -12,9 +12,9 @@ const DAY_NAMES = ["Ravi", "Som", "Mang", "Budh", "Guru", "Shukr", "Shan"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === "taken") return <span className="badge-taken">✅ Le li</span>;
-  if (status === "skipped") return <span className="badge-skipped">⏭️ Chhod di</span>;
-  return <span className="badge-pending">⏳ Baaki</span>;
+  if (status === "taken") return <span className="badge-taken text-xs">✓ Le li</span>;
+  if (status === "skipped") return <span className="badge-skipped text-xs">⏭️ Chhod di</span>;
+  return <span className="badge-pending text-xs">⏳ Baaki</span>;
 }
 
 function formatTime12(time: string): string {
@@ -30,7 +30,7 @@ function formatMarkedAt(date: Date | null): string {
 }
 
 export default function FamilyViewPage() {
-  const { profile } = useAuth();
+  const { profile, family } = useAuth();
   const [records, setRecords] = useState<MedicineStatusRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,105 +59,104 @@ export default function FamilyViewPage() {
   const dateStr = `${DAY_NAMES[today.getDay()]}, ${today.getDate()} ${MONTHS[today.getMonth()]}`;
 
   return (
-    <div className="px-4 pt-6">
-      <h1 className="text-3xl font-extrabold text-[#1c1917] mb-1">
-        👨‍👩‍👧‍👦 Parivaar ka Haal
-      </h1>
-      <p className="text-[#78716c] text-base mb-5">{dateStr}</p>
+    <div className="px-4 pt-5 max-w-lg mx-auto pb-24">
+      {/* ─── Header ─── */}
+      <div className="mb-4">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1F4B4C] flex items-center gap-2">
+          <span>👨‍👩‍👧‍👦</span>
+          <span>Parivaar ka Haal</span>
+        </h1>
+        <p className="text-xs sm:text-sm text-[#6E675F] font-semibold mt-0.5">
+          {dateStr} {family ? `• ${family.name}` : ""}
+        </p>
+      </div>
 
-      {/* Summary strip */}
+      {/* ─── Summary Strip ─── */}
       {!loading && totalMeds > 0 && (
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="card text-center py-4">
-            <div className="text-3xl font-extrabold text-[#16a34a]">{takenCount}</div>
-            <div className="text-sm font-semibold text-[#78716c] mt-1">Le li ✅</div>
+        <div className="grid grid-cols-3 gap-2.5 mb-5">
+          <div className="card bg-white border border-[#E5DFD5] text-center p-3 rounded-xl shadow-xs">
+            <div className="text-2xl font-extrabold text-[#4A7C59]">{takenCount}</div>
+            <div className="text-xs font-bold text-[#6E675F] mt-0.5">Le li ✓</div>
           </div>
-          <div className="card text-center py-4">
-            <div className="text-3xl font-extrabold text-[#d97706]">{skippedCount}</div>
-            <div className="text-sm font-semibold text-[#78716c] mt-1">Chhod di ⏭️</div>
+          <div className="card bg-white border border-[#E5DFD5] text-center p-3 rounded-xl shadow-xs">
+            <div className="text-2xl font-extrabold text-[#C27D26]">{skippedCount}</div>
+            <div className="text-xs font-bold text-[#6E675F] mt-0.5">Chhod di ⏭️</div>
           </div>
-          <div className="card text-center py-4">
-            <div className="text-3xl font-extrabold text-[#f97316]">{pendingCount}</div>
-            <div className="text-sm font-semibold text-[#78716c] mt-1">Baaki ⏳</div>
+          <div className="card bg-white border border-[#E5DFD5] text-center p-3 rounded-xl shadow-xs">
+            <div className="text-2xl font-extrabold text-[#1F4B4C]">{pendingCount}</div>
+            <div className="text-xs font-bold text-[#6E675F] mt-0.5">Baaki ⏳</div>
           </div>
         </div>
       )}
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-16">
-          <div className="text-5xl mb-4 animate-spin">⏳</div>
-          <p className="text-[#78716c] text-lg">Load ho raha hai...</p>
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="text-3xl mb-2 animate-spin">⏳</div>
+          <p className="text-[#6E675F] text-sm">Parivaar ka status load ho raha hai...</p>
         </div>
       ) : records.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-6xl mb-4">📋</div>
-          <h2 className="text-2xl font-bold text-[#1c1917] mb-2">
-            Aaj koi dawai nahi
+        <div className="bg-white border border-[#E5DFD5] rounded-2xl p-6 text-center">
+          <div className="text-4xl mb-2">📋</div>
+          <h2 className="text-base font-bold text-[#2A2622] mb-1">
+            Aaj parivaar me koi dawai scheduled nahi hai
           </h2>
-          <p className="text-[#78716c] text-lg">
-            Dawai add karne ke liye + dabayein
+          <p className="text-xs text-[#6E675F]">
+            Dawai jodne ke liye Dawai + tab chunein.
           </p>
         </div>
       ) : (
         Object.entries(grouped).map(([person, personRecords]) => {
           const personTaken = personRecords.filter((r) => r.status === "taken").length;
+          const isComplete = personTaken === personRecords.length;
+
           return (
-            <div key={person} className="mb-6">
+            <div key={person} className="mb-5 bg-white border border-[#E5DFD5] rounded-2xl p-4 shadow-xs">
               {/* Person header */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold"
-                    style={{ background: "#f97316" }}
-                  >
-                    {person[0]?.toUpperCase()}
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#E5DFD5]/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-[#EBF3F3] border border-[#CFE0E0] text-[#1F4B4C] flex items-center justify-center text-base font-extrabold shrink-0">
+                    {person[0]?.toUpperCase() || "👤"}
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-[#1c1917]">{person}</h2>
-                    <p className="text-sm text-[#78716c]">
-                      {personTaken}/{personRecords.length} li
+                    <h2 className="text-base sm:text-lg font-bold text-[#2A2622]">{person}</h2>
+                    <p className="text-xs text-[#6E675F] font-semibold">
+                      {personTaken}/{personRecords.length} dawaiyaan li
                     </p>
                   </div>
                 </div>
-                <div
-                  className="px-3 py-1 rounded-full text-sm font-bold"
-                  style={{
-                    background:
-                      personTaken === personRecords.length
-                        ? "#dcfce7"
-                        : "#fef3c7",
-                    color:
-                      personTaken === personRecords.length
-                        ? "#15803d"
-                        : "#92400e",
-                  }}
+
+                <span
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
+                    isComplete
+                      ? "bg-[#E8F0EA] text-[#346141] border-[#C4DCCB]"
+                      : "bg-[#FDF4E6] text-[#8A5415] border-[#F3DCC0]"
+                  }`}
                 >
-                  {personTaken === personRecords.length ? "✓ Done!" : `${personRecords.length - personTaken} baaki`}
-                </div>
+                  {isComplete ? "✓ Done" : `${personRecords.length - personTaken} baaki`}
+                </span>
               </div>
 
-              {/* Medicine rows */}
-              <div className="space-y-3">
+              {/* Medicine items */}
+              <div className="space-y-2">
                 {personRecords.map((record) => (
-                  <div key={record.id} className="card">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <p className="text-lg font-bold text-[#1c1917]">
-                          {record.medicineName}
+                  <div
+                    key={record.id}
+                    className="bg-[#FAF7F2] border border-[#E5DFD5] rounded-xl p-3 flex items-center justify-between gap-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-[#2A2622] truncate">
+                        {record.medicineName}
+                      </p>
+                      <p className="text-xs text-[#6E675F] mt-0.5">
+                        🕐 {formatTime12(record.medicineTime)} • {record.takenAfterFood ? "Khane ke baad" : "Khane se pehle"}
+                      </p>
+                      {record.markedAt && (
+                        <p className="text-[10px] text-[#4A7C59] font-semibold mt-0.5">
+                          ✓ {record.markedByName} ne mark kiya ({formatMarkedAt(record.markedAt)})
                         </p>
-                        <p className="text-[#78716c] text-base mt-0.5">
-                          🕐 {formatTime12(record.medicineTime)}
-                          {" · "}
-                          {record.takenAfterFood ? "Khane ke baad" : "Khane se pehle"}
-                        </p>
-                        {record.markedAt && (
-                          <p className="text-sm text-[#78716c] mt-1">
-                            {record.markedByName} ne mark kiya — {formatMarkedAt(record.markedAt)}
-                          </p>
-                        )}
-                      </div>
-                      <StatusBadge status={record.status} />
+                      )}
                     </div>
+                    <StatusBadge status={record.status} />
                   </div>
                 ))}
               </div>

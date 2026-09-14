@@ -130,6 +130,7 @@ export async function getUserProfile(uid: string): Promise<FamilyMember | null> 
   return {
     uid: snap.id,
     displayName: d.displayName,
+    nickname: d.nickname || d.displayName,
     email: d.email,
     familyId: d.familyId,
     fcmToken: d.fcmToken ?? (fcmTokens.length > 0 ? fcmTokens[fcmTokens.length - 1] : undefined),
@@ -145,6 +146,14 @@ export async function createOrUpdateUserProfile(
 ): Promise<void> {
   const ref = doc(db, "users", uid);
   await setDoc(ref, { ...data, updatedAt: serverTimestamp() }, { merge: true });
+}
+
+export async function updateUserNickname(uid: string, nickname: string): Promise<void> {
+  const ref = doc(db, "users", uid);
+  await updateDoc(ref, {
+    nickname: nickname.trim(),
+    updatedAt: serverTimestamp(),
+  });
 }
 
 export async function getFamilyMembers(
@@ -166,6 +175,7 @@ export async function getFamilyMembers(
     return {
       uid: d.id,
       displayName: data.displayName,
+      nickname: data.nickname || data.displayName,
       email: data.email,
       familyId: data.familyId,
       fcmToken: data.fcmToken ?? (fcmTokens.length > 0 ? fcmTokens[fcmTokens.length - 1] : undefined),
