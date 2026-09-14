@@ -529,57 +529,65 @@ export default function VoiceInputModal() {
 
             {/* ─── State D: Unknown Intent Fallback ─── */}
             {!isListening && parsedResult && parsedResult.type === "unknown" && (
-              <div className="my-3 space-y-4">
-                <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 text-center">
-                  <p className="text-2xl mb-1">🤔</p>
-                  <h4 className="text-lg font-black text-stone-900">
+              <div className="my-2 space-y-3">
+                <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3.5 text-center">
+                  <p className="text-2xl mb-0.5">🤔</p>
+                  <h4 className="text-base sm:text-lg font-black text-stone-900">
                     Samajh nahi aaya, kya karna hai?
                   </h4>
-                  <p className="text-xs text-stone-600 font-bold mt-1">
+                  <p className="text-xs text-stone-600 font-bold mt-1 break-words">
                     Aapne bola: <span className="text-stone-950 font-black">&quot;{parsedResult.rawText}&quot;</span>
                   </p>
                 </div>
 
                 {manualMode === "none" ? (
-                  <div className="space-y-2.5">
+                  <div className="flex flex-col gap-2.5 w-full">
+                    {/* 1. Shopping List Option */}
                     <button
                       type="button"
                       onClick={() => setManualMode("shopping")}
-                      className="w-full py-3.5 px-4 rounded-xl border-2 border-amber-300 bg-white hover:bg-amber-50 text-stone-900 font-extrabold text-base flex items-center justify-between shadow-xs cursor-pointer transition"
+                      className="w-full py-3 px-4 rounded-xl border-2 border-amber-300 bg-white hover:bg-amber-50 active:bg-amber-100 text-stone-900 font-extrabold text-sm sm:text-base flex items-center justify-between shadow-xs cursor-pointer transition"
                     >
-                      <span className="flex items-center gap-2">
-                        <span>🛒</span> Shopping List me jodein
+                      <span className="flex items-center gap-2 truncate">
+                        <span className="text-lg shrink-0">🛒</span>
+                        <span className="truncate">Shopping List me jodein</span>
                       </span>
-                      <span>➔</span>
+                      <span className="text-amber-700 font-bold ml-2 shrink-0">➔</span>
                     </button>
 
+                    {/* 2. Expense Option */}
                     <button
                       type="button"
                       onClick={() => setManualMode("expense")}
-                      className="w-full py-3.5 px-4 rounded-xl border-2 border-orange-300 bg-white hover:bg-orange-50 text-stone-900 font-extrabold text-base flex items-center justify-between shadow-xs cursor-pointer transition"
+                      className="w-full py-3 px-4 rounded-xl border-2 border-orange-300 bg-white hover:bg-orange-50 active:bg-orange-100 text-stone-900 font-extrabold text-sm sm:text-base flex items-center justify-between shadow-xs cursor-pointer transition"
                     >
-                      <span className="flex items-center gap-2">
-                        <span>💰</span> Expense (Hisab) me jodein
+                      <span className="flex items-center gap-2 truncate">
+                        <span className="text-lg shrink-0">💰</span>
+                        <span className="truncate">Expense (Hisab) me jodein</span>
                       </span>
-                      <span>➔</span>
+                      <span className="text-[#ea580c] font-bold ml-2 shrink-0">➔</span>
                     </button>
 
-                    <div className="flex gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={startListening}
-                        className="flex-1 py-2.5 rounded-xl border border-stone-300 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs cursor-pointer"
-                      >
-                        🎙️ Dobara bole
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsOpen(false)}
-                        className="flex-1 py-2.5 rounded-xl border border-stone-300 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs cursor-pointer"
-                      >
-                        ❌ Cancel
-                      </button>
-                    </div>
+                    {/* 3. Cancel Option */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsOpen(false);
+                        setParsedResult(null);
+                      }}
+                      className="w-full py-2.5 px-4 rounded-xl border border-stone-300 bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-800 font-bold text-xs sm:text-sm text-center cursor-pointer transition"
+                    >
+                      ❌ Cancel
+                    </button>
+
+                    {/* Retry Link */}
+                    <button
+                      type="button"
+                      onClick={startListening}
+                      className="text-stone-500 hover:text-stone-900 font-bold text-xs text-center pt-1 cursor-pointer"
+                    >
+                      🎙️ Dobara bole (Try again)
+                    </button>
                   </div>
                 ) : manualMode === "shopping" ? (
                   /* Pre-filled quick shopping confirmation */

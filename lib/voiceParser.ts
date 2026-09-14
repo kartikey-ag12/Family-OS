@@ -156,9 +156,8 @@ const CATEGORY_KEYWORDS: Record<ExpenseCategory, string[]> = {
     "पेट्रोल", "डीजल", "सीएनजी"
   ],
   Medical: [
-    "dawai", "dawa", "medicine", "medicines", "tablet", "tablets", "capsule", "syrup",
-    "doctor", "dr", "clinic", "hospital", "medical", "chemist", "pharmacy", "paracetamol",
-    "दवाई", "दवा", "डॉक्टर", "मेडिकल", "गोली", "सिरप", "अस्पताल"
+    "doctor fees", "doctor fee", "dr fees", "clinic", "hospital", "chemist", "pharmacy", "medical bill", "medical store",
+    "दवा का बिल", "डॉक्टर फीस", "मेडिकल बिल", "अस्पताल"
   ],
   Repair: [
     "repair", "plumber", "electrician", "mistri", "mistry", "mechanic", "carpenter",
@@ -179,13 +178,18 @@ function matchCategory(text: string): ExpenseCategory {
   const lower = text.toLowerCase();
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     for (const kw of keywords) {
-      // Check word boundaries for short words
       const regex = new RegExp(`\\b${kw}\\b`, "i");
       if (regex.test(lower) || lower.includes(kw.toLowerCase())) {
         return category as ExpenseCategory;
       }
     }
   }
+
+  // Fallback check for medical expense if "dawai" + "rupaye" / "bill" is present
+  if (/(?:dawai|dawa|medicine|tablet|goli|दवाई|दवा)\b/i.test(lower) && /(?:rupaye|rupee|rs\.?|₹|bill|kharcha|रुपये|बिल)/i.test(lower)) {
+    return "Medical";
+  }
+
   return "Others";
 }
 
@@ -201,25 +205,37 @@ export function parseVoiceInput(rawTranscript: string): ParsedVoiceResult {
   const normalized = normalizeHindiNumbers(lower);
 
   // ─────────────────────────────────────────────────────────────
-  // 1. Check for MEDICINE REMINDER Pattern
-  // Trigger words: medicine keywords OR (time keywords + medicine context)
+  // 1. PRIORITY 1: Check for MEDICINE REMINDER Pattern
+  // Trigger: Contains medicine keyword AND (time marker OR reminder context)
   // ─────────────────────────────────────────────────────────────
   const hasMedKeyword =
-    /\b(dawai|dawa|medicine|tablet|tablets|goli|capsule|syrup|drops|paracetamol|crocin|combiflam|pantocid|bp|sugar|thyroid|insulin|vitamins|calcium)\b/i.test(lower) ||
-    /(दवाई|दवा|गोली|टैबलेट|कैप्सूल|सिरप|पैरासिटामोल|बीपी|शुगर|इंसुलिन)/.test(text);
+    /\b(dawai|dawa|medicine|medicines|tablet|tablets|goli|capsule|capsules|syrup|drops|paracetamol|crocin|combiflam|pantocid|bp|sugar|thyroid|insulin|vitamins|calcium|injection)\b/i.test(lower) ||
+    /(दवाई|दवा|गोली|टैबलेट|कैप्सूल|सिरप|पैरासिटामोल|बीपी|शुगर|इंसुलिन|कैल्शियम|विटामिन)/.test(text);
 
   const hasTimeKeyword =
     /\b(\d{1,2}(?::\d{2})?\s*(?:baje|am|pm|बजे))\b/i.test(normalized) ||
     /\b(subah|shaam|dopahar|raat|सुबह|शाम|दोपहर|रात)\s*\d{1,2}\b/i.test(normalized) ||
-    /\b(subah|shaam|dopahar|raat|सुबह|शाम|दोपहर|रात)\b/i.test(lower);
+    /\b(subah|shaam|dopahar|raat|सुबह|शाम|दोपहर|रात|time|baje|बजे)\b/i.test(lower);
 
-  if (hasMedKeyword && (hasTimeKeyword || /reminder|yaad|lena|khana/i.test(lower))) {
+  const isExplicitMedicalExpense =
+    /(?:rupaye|rupee|rupees|rs\.?|₹|bill|kharcha|fees|fee|रुपये|रुपया|बिल|खर्च|फीस)/i.test(lower);
+
+  // If medicine signals are present and it's not explicitly a monetary payment/bill, treat as medicine reminder
+  if (hasMedKeyword && (hasTimeKeyword || /reminder|yaad|lena|khana|time/i.test(lower)) && !isExplicitMedicalExpense) {
     const parsedMed = parseMedicineIntent(text, normalized);
     if (parsedMed) return parsedMed;
   }
 
+  // Also catch cases where time marker + medicine name is spoken without explicit "dawai" keyword (e.g. "Raat 9 baje paracetamol")
+  if (hasTimeKeyword && !isExplicitMedicalExpense) {
+    const parsedMed = parseMedicineIntent(text, normalized);
+    if (parsedMed && parsedMed.type === "medicine" && parsedMed.name !== "Dawai") {
+      return parsedMed;
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────
-  // 2. Check for SHOPPING LIST Pattern
+  // 2. PRIORITY 2: Check for SHOPPING LIST Pattern
   // Explicit triggers: "list me daalo", "lana hai", "chahiye", "le aana", "mangwana hai"
   // OR phrases with quantity units ("2 kilo", "1 litre") and NO currency markers
   // ─────────────────────────────────────────────────────────────
@@ -245,7 +261,7 @@ export function parseVoiceInput(rawTranscript: string): ParsedVoiceResult {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // 3. Check for EXPENSE Pattern
+  // 3. PRIORITY 3: Check for EXPENSE Pattern
   // Must contain an amount + either currency/expense words OR specific category
   // ─────────────────────────────────────────────────────────────
   const amount = extractExpenseAmount(text);
@@ -305,8 +321,8 @@ function parseMedicineIntent(text: string, normalized: string): ParsedVoiceResul
   const takenAfterFood = !/(?:khali\s*pet|bina\s*khaye|khane\s*se\s*pehle|खाली\s*पेट)/i.test(normalized);
 
   let medName = text
-    .replace(/\b(?:kal|aaj|subah|shaam|dopahar|raat|baje|\d{1,2}(?::\d{2})?|am|pm|ki|ka|ke|dawai|dawa|medicine|tablet|goli|lena|dena|yaad\s*dilana|reminder|set\s*karo|add\s*karo)\b/gi, " ")
-    .replace(/(?:दवाई|दवा|गोली|बजे|सुबह|शाम|रात|कल)/g, " ")
+    .replace(/\b(?:kal|aaj|subah|shaam|dopahar|raat|baje|\d{1,2}(?::\d{2})?|am|pm|ki|ka|ke|ko|se|dawai|dawa|medicine|tablet|goli|lena|dena|yaad\s*dilana|reminder|set\s*karo|add\s*karo|khane\s*ke\s*baad|khali\s*pet|khane\s*se\s*pehle|khana|baad|pehle)\b/gi, " ")
+    .replace(/(?:दवाई|दवा|गोली|बजे|सुबह|शाम|रात|कल|खाने\s*के\s*बाद|खाली\s*पेट|पहले|खाना)/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
